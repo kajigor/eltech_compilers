@@ -113,7 +113,7 @@ module X86 =
 
     let regs  = [|"%eax"; "%ebx"; "%ecx"; "%edx"; "%esi"; "%edi"|]
     let nregs = Array.length regs
-	let stackSlots = ref 0
+	let stackAddDep = ref 0
 	let variables = ref StringSet.empty
 
 	let wordSize = 4
@@ -133,9 +133,10 @@ module X86 =
 	let allocate stack =
 	  match stack with
 	  | []                                -> R 0
-	  | (S n)::_                          -> stackSlots := max (n+2) !stackSlots; S (n+1)
+	  | (S n)::_                          -> stackAddDep := max (n+2) !stackAddDep; S (n+1)
+		(* используем регистры общего назначения [ax-dx] *)
 	  | (R n)::_ when n < nregs - 3 -> R (n+1)
-	  | _                                 -> stackSlots := max 1 !stackSlots; S 0
+	  | _                                 -> stackAddDep := max 1 !stackAddDep; S 0
 
     let rec sint prg sstack =
       match prg with
@@ -160,6 +161,7 @@ module X86 =
 			| WRITE -> 
 				let s :: sstack' = sstack in
 				(* вызов С++ функции для вывода в stdout *)
+				(* запишем из S в AX, т.к. нужно передать как параметр в fnwrite *)
 				[Mov (s, eax);Push eax; Call "fnwrite"; Pop eax], sstack'
 			| ADD -> 
 				let x::y::sstack'= sstack in
@@ -180,7 +182,7 @@ module X86 =
           code @ code', sstack''
 
 	let printAsmCode instr =
-	  let opnd op =
+	  let opStr op =
 		match op with
 		| R i -> regs.(i)
 		| S i -> Printf.sprintf "-%d(%%ebp)" (i * wordSize)
@@ -188,16 +190,16 @@ module X86 =
 		| M x -> x
 	  in
 	  match instr with
-	  | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s" (opnd x) (opnd y)
-	  | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (opnd x) (opnd y)
-	  | Mov       (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (opnd x) (opnd y)
-	  | Push           x -> Printf.sprintf "pushl\t%s" (opnd x)
-	  | Pop            x -> Printf.sprintf "popl\t%s"  (opnd x)
+	  | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s" (opStr x) (opStr y)
+	  | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (opStr x) (opStr y)
+	  | Mov       (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (opStr x) (opStr y)
+	  | Push           x -> Printf.sprintf "pushl\t%s" (opStr x)
+	  | Pop            x -> Printf.sprintf "popl\t%s"  (opStr x)
 	  | Call           f -> Printf.sprintf "call\t%s" f
 	  | Ret              -> "ret"
 
 
-	let genasm stmt =
+	let toAsm prog =
 	  let allText = ref "" in
       (* добавляет текст к allText *)
       let append = fun newText -> allText := Printf.sprintf "%s%s" !allText newText in
@@ -205,18 +207,18 @@ module X86 =
       (* что-то вроде T из лиспа *)
 	  let execM = fun _ -> () in
 	
-	  let code = sint (comp stmt) [] in
+	  let code = sint (comp prog) [] in
       append "\t.text\n\t.globl\tmain\n";
 	  List.iter
 		(fun x -> append (Printf.sprintf "\t.comm\t%s,\t%d,\t%d\n" x wordSize wordSize))
 		(StringSet.elements !variables);
 	  append "main:\n";
-	  if !stackSlots != 0 then
-		 execM [append "\tpushl\t%ebp\n"; append "\tmovl\t%esp,\t%ebp\n";append (Printf.sprintf "\tsubl\t$%d,\t%%esp\n" (!stackSlots * wordSize))];
+	  if !stackAddDep != 0 then
+		 execM [append "\tpushl\t%ebp\n"; append "\tmovl\t%esp,\t%ebp\n";append (Printf.sprintf "\tsubl\t$%d,\t%%esp\n" (!stackAddDep * wordSize))];
 	  List.iter
 		(fun i -> append (Printf.sprintf "\t%s\n" (printAsmCode i)))
 		(fst code);
-	  if !stackSlots != 0 then
+	  if !stackAddDep != 0 then
 		 execM [append "\tmovl\t%ebp,\t%esp\n";append "\tpopl\t%ebp\n"];
 	  append "\txorl\t%eax,\t%eax\n";
 	  append "\tret\n";

@@ -36,7 +36,7 @@ let _ =
   Printf.printf "%s\n" (show(list) (show(int)) @@ run p [10; 20]);
   Printf.printf "%s\n" (show(list) (show(int)) @@ srun (comp p) [10; 20]);
   let outf = open_out "asmcode.s" in
-  Printf.fprintf outf "%s\n" (X86.genasm p);
+  Printf.fprintf outf "%s\n" (X86.toAsm p);
   close_out outf
 
 let gen n =
