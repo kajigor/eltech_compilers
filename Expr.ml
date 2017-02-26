@@ -113,10 +113,10 @@ module X86 =
 
     let regs  = [|"%eax"; "%ebx"; "%ecx"; "%edx"; "%esi"; "%edi"|]
     let nregs = Array.length regs
-	let stack_slots = ref 0
+	let stackSlots = ref 0
 	let variables = ref StringSet.empty
 
-	let word_size = 4
+	let wordSize = 4
 	let eax = R 0
 	let edx = R 3
 
@@ -133,9 +133,9 @@ module X86 =
 	let allocate stack =
 	  match stack with
 	  | []                                -> R 0
-	  | (S n)::_                          -> stack_slots := max (n+2) !stack_slots; S (n+1)
+	  | (S n)::_                          -> stackSlots := max (n+2) !stackSlots; S (n+1)
 	  | (R n)::_ when n < nregs - 3 -> R (n+1)
-	  | _                                 -> stack_slots := max 1 !stack_slots; S 0
+	  | _                                 -> stackSlots := max 1 !stackSlots; S 0
 
     let rec sint prg sstack =
       match prg with
@@ -183,7 +183,7 @@ module X86 =
 	  let opnd op =
 		match op with
 		| R i -> regs.(i)
-		| S i -> Printf.sprintf "-%d(%%ebp)" (i * word_size)
+		| S i -> Printf.sprintf "-%d(%%ebp)" (i * wordSize)
 		| L i -> Printf.sprintf "$%d" i
 		| M x -> x
 	  in
@@ -208,15 +208,15 @@ module X86 =
 	  let code = sint (comp stmt) [] in
       append "\t.text\n\t.globl\tmain\n";
 	  List.iter
-		(fun x -> append (Printf.sprintf "\t.comm\t%s,\t%d,\t%d\n" x word_size word_size))
+		(fun x -> append (Printf.sprintf "\t.comm\t%s,\t%d,\t%d\n" x wordSize wordSize))
 		(StringSet.elements !variables);
 	  append "main:\n";
-	  if !stack_slots != 0 then
-		 execM [append "\tpushl\t%ebp\n"; append "\tmovl\t%esp,\t%ebp\n";append (Printf.sprintf "\tsubl\t$%d,\t%%esp\n" (!stack_slots * word_size))];
+	  if !stackSlots != 0 then
+		 execM [append "\tpushl\t%ebp\n"; append "\tmovl\t%esp,\t%ebp\n";append (Printf.sprintf "\tsubl\t$%d,\t%%esp\n" (!stackSlots * wordSize))];
 	  List.iter
 		(fun i -> append (Printf.sprintf "\t%s\n" (printAsmCode i)))
 		(fst code);
-	  if !stack_slots != 0 then
+	  if !stackSlots != 0 then
 		 execM [append "\tmovl\t%ebp,\t%esp\n";append "\tpopl\t%ebp\n"];
 	  append "\txorl\t%eax,\t%eax\n";
 	  append "\tret\n";
