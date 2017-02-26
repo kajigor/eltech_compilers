@@ -2,12 +2,19 @@
 
 using namespace std;
 
-extern "C" int read () {
-  int d = 0;
-  cin >> d;
-  return d;
+/**
+* Функции помощники для чтения и вывода
+* Extern C нужен, иначе не будет нужных символов и код не слинкуется
+*/
+
+// number будет в eax
+extern "C" int fnread () {
+  int number = 0;
+  cin >> number;
+  return number;
 }
 
-extern "C" void write (int n) {
+// в 32-х битном асме аргумент передаётся через eax
+extern "C" void fnwrite (int n) {
   cout << n << endl;
 }

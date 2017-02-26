@@ -1,5 +1,6 @@
 (* AST for expressions *)
 open GT
+open Printf
 
 @type expr =
 | Var   of string
@@ -25,6 +26,7 @@ let rec eval expr st =
   | Mul  (x, y) -> eval' x * eval' y
 
 (* State update primitive *) 
+(* возвращается либо текущая функция (если аргумент x = y), либо одна из предыдущих таких же (st в scope'ах). В самом конце будет функция, которая роняет программу  *)
 let update st x v = fun y -> if y = x then v else st y 
 
 (* Interpreter for statements *)
@@ -55,11 +57,12 @@ type instr =
 | MUL
 
 type prg = instr list
-
+	
 let srun prg input =
   let rec srun' prg ((stack, st, input, output) as conf) =
     match prg with
     | []        -> conf
+	(* рекурсивное выполнение стейтментов одного за другим, на вход каждой следующей "строке" идёт новая конфигурация *)
     | i :: prg' ->
         srun' prg' (
           match i with
@@ -67,11 +70,11 @@ let srun prg input =
                      (z :: stack, st, input', output)
           | WRITE -> let z :: stack' = stack in
                      (stack', st, input, output @ [z])
-	  | PUSH n -> (n :: stack, st, input, output)
+	      | PUSH n -> (n :: stack, st, input, output)
           | LD   x -> (st x :: stack, st, input, output)
-	  | ST   x -> let z :: stack' = stack in
+	  	  | ST   x -> let z :: stack' = stack in
                       (stack', update st x z, input, output)
-	  | _ -> let y :: x :: stack' = stack in
+	  	  | _ -> let y :: x :: stack' = stack in
                  ((match i with ADD -> (+) | _ -> ( * )) x y :: stack', 
                   st, 
                   input, 
@@ -104,10 +107,18 @@ let rec comp = function
 module X86 =
   struct
 
+	module StringSet = Set.Make (String)
+
     type opnd = R of int | S of int | L of int | M of string
 
-    let regs  = [|"%eax"; "%ebx"; "%ecx"; "%esi"; "%edi"|]
+    let regs  = [|"%eax"; "%ebx"; "%ecx"; "%edx"; "%esi"; "%edi"|]
     let nregs = Array.length regs
+	let stack_slots = ref 0
+	let variables = ref StringSet.empty
+
+	let word_size = 4
+	let eax = R 0
+	let edx = R 3
 
     type instr =
     | Add  of opnd * opnd
@@ -118,32 +129,97 @@ module X86 =
     | Call of string
     | Ret
 
-    let allocate = function
-    | []                          -> R 0
-    | R i :: _ when i < nregs - 1 -> R (i+1)
-    | S i :: _                    -> S (i+1)
-    | _                           -> S 0 
+
+	let allocate stack =
+	  match stack with
+	  | []                                -> R 0
+	  | (S n)::_                          -> stack_slots := max (n+2) !stack_slots; S (n+1)
+	  | (R n)::_ when n < nregs - 3 -> R (n+1)
+	  | _                                 -> stack_slots := max 1 !stack_slots; S 0
 
     let rec sint prg sstack =
       match prg with
       | []        -> [], []
       | i :: prg' ->
           let (code, sstack') = 
-	    match i with
-	    | PUSH n -> 
+	    	match i with
+	    	| PUSH n -> 
                 let s = allocate sstack in
                 [Mov (L n, s)], s :: sstack
             | LD x ->
+				variables := StringSet.add x !variables;
                 let s = allocate sstack in
                 [Mov (M x, s)], s :: sstack
-	    | ST x ->
+	    	| ST x ->
+				variables := StringSet.add x !variables;
                 let s :: sstack' = sstack in
-                [Mov (s, M x)], sstack' 
+                [Mov (s, M x)], sstack'
+			| READ -> 
+				(* вызов С++ функции для чтения из stdin *)
+				[Call "fnread"], [eax]
+			| WRITE -> 
+				let s :: sstack' = sstack in
+				(* вызов С++ функции для вывода в stdout *)
+				[Mov (s, eax);Push eax; Call "fnwrite"; Pop eax], sstack'
+			| ADD -> 
+				let x::y::sstack'= sstack in
+				(match x, y with 
+				| S _, S _ -> 
+						(*оба в стеке, достанем x и можно совершать операции, то же самое для mul*)
+						[Mov (x, eax); Add (eax, y)], y::sstack'
+				| _ -> [Add (x, y)], y::sstack')
+			| MUL -> 
+				let x::y::sstack'= sstack in
+				(match x, y with 
+				| S _, S _ -> 
+						[Mov (x, eax); Mul (eax, y)], y::sstack'
+				| _ -> [Mul (x, y)], y::sstack')
+
           in
           let (code', sstack'') = sint prg' sstack' in
           code @ code', sstack''
-(*
-    let compile stmt = 
-      sint (comp stmt) 
-*)
+
+	let printAsmCode instr =
+	  let opnd op =
+		match op with
+		| R i -> regs.(i)
+		| S i -> Printf.sprintf "-%d(%%ebp)" (i * word_size)
+		| L i -> Printf.sprintf "$%d" i
+		| M x -> x
+	  in
+	  match instr with
+	  | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s" (opnd x) (opnd y)
+	  | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (opnd x) (opnd y)
+	  | Mov       (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (opnd x) (opnd y)
+	  | Push           x -> Printf.sprintf "pushl\t%s" (opnd x)
+	  | Pop            x -> Printf.sprintf "popl\t%s"  (opnd x)
+	  | Call           f -> Printf.sprintf "call\t%s" f
+	  | Ret              -> "ret"
+
+
+	let genasm stmt =
+	  let allText = ref "" in
+      (* добавляет текст к allText *)
+      let append = fun newText -> allText := Printf.sprintf "%s%s" !allText newText in
+	  
+      (* что-то вроде T из лиспа *)
+	  let execM = fun _ -> () in
+	
+	  let code = sint (comp stmt) [] in
+      append "\t.text\n\t.globl\tmain\n";
+	  List.iter
+		(fun x -> append (Printf.sprintf "\t.comm\t%s,\t%d,\t%d\n" x word_size word_size))
+		(StringSet.elements !variables);
+	  append "main:\n";
+	  if !stack_slots != 0 then
+		 execM [append "\tpushl\t%ebp\n"; append "\tmovl\t%esp,\t%ebp\n";append (Printf.sprintf "\tsubl\t$%d,\t%%esp\n" (!stack_slots * word_size))];
+	  List.iter
+		(fun i -> append (Printf.sprintf "\t%s\n" (printAsmCode i)))
+		(fst code);
+	  if !stack_slots != 0 then
+		 execM [append "\tmovl\t%ebp,\t%esp\n";append "\tpopl\t%ebp\n"];
+	  append "\txorl\t%eax,\t%eax\n";
+	  append "\tret\n";
+	  !allText;
+
   end

@@ -23,18 +23,21 @@ let (|>) l r = Seq (l, r)
   read (x);
   read (y);
   z := x * y;
-  write (z)
+  write (x)
 *)
   
 let p =
   read "x" |>
   read "y" |>
   ("z" := !"x" * !"y" + const 1) |>
-  write !"z"
+  write (!"z")
 
 let _ =
   Printf.printf "%s\n" (show(list) (show(int)) @@ run p [10; 20]);
-  Printf.printf "%s\n" (show(list) (show(int)) @@ srun (comp p) [10; 20])
+  Printf.printf "%s\n" (show(list) (show(int)) @@ srun (comp p) [10; 20]);
+  let outf = open_out "asmcode.s" in
+  Printf.fprintf outf "%s\n" (X86.genasm p);
+  close_out outf
 
 let gen n =
   let rec gen_read n i =
