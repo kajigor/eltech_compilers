@@ -139,6 +139,27 @@ module X86 =
 	    | ST x ->
                 let s :: sstack' = sstack in
                 [Mov (s, M x)], sstack' 
+           
+            (*READ, WRITE, ADD and MUL*)
+            | READ   ->
+                (*some code*), eax::sstack
+	    
+            | WRITE  ->
+                let s :: sstack' = sstack in 
+		[Mov (s, eax); (*some code*)], sstack'
+             			
+            | ADD    -> 
+		let x::y::sstack'= sstack in
+		(match x, y with 
+		| S _, S _ -> [Mov (x, eax); Add (eax, y)], y::sstack'
+		| _        -> [Add (x, y)], y::sstack')
+	
+            | MUL    -> 
+		let x::y::sstack'= sstack in
+		(match x, y with 
+		| S _, S _ -> [Mov (x, eax); Mul (eax, y)], y::sstack'
+                | _        -> [Mul (x, y)], y::sstack')
+
           in
           let (code', sstack'') = sint prg' sstack' in
           code @ code', sstack''
