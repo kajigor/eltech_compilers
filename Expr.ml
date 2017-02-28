@@ -106,8 +106,14 @@ module X86 =
 
     type opnd = R of int | S of int | L of int | M of string
 
-    let regs  = [|"%eax"; "%ebx"; "%ecx"; "%esi"; "%edi"|]
+    let regs  = [|"%eax"; "%ebx"; "%ecx"; "%edx"; "%esi"; "%edi"|]
     let nregs = Array.length regs
+	let stackAddDep = ref 0
+	let variables = ref StringSet.empty
+
+	let wordSize = 4
+	let eax = R 0
+	let edx = R 3
 
     type instr =
     | Add  of opnd * opnd
@@ -118,32 +124,89 @@ module X86 =
     | Call of string
     | Ret
 
-    let allocate = function
-    | []                          -> R 0
-    | R i :: _ when i < nregs - 1 -> R (i+1)
-    | S i :: _                    -> S (i+1)
-    | _                           -> S 0 
+	let allocate stack =
+	  match stack with
+	  | []                                -> R 0
+	  | (S n)::_                          -> stackAddDep := max (n+2) !stackAddDep; S (n+1)
+	  | (R n)::_ when n < nregs - 3 -> R (n+1)
+	  | _                                 -> stackAddDep := max 1 !stackAddDep; S 0
 
-    let rec sint prg sstack =
+let rec sint prg sstack =
       match prg with
       | []        -> [], []
       | i :: prg' ->
           let (code, sstack') = 
-	    match i with
-	    | PUSH n -> 
+	    	match i with
+	    	| PUSH n -> 
                 let s = allocate sstack in
                 [Mov (L n, s)], s :: sstack
             | LD x ->
+				variables := StringSet.add x !variables;
                 let s = allocate sstack in
                 [Mov (M x, s)], s :: sstack
-	    | ST x ->
+	    	| ST x ->
+				variables := StringSet.add x !variables;
                 let s :: sstack' = sstack in
-                [Mov (s, M x)], sstack' 
+                [Mov (s, M x)], sstack'
+			| READ -> 
+				(*todo*)
+
+			| WRITE -> 
+				(*todo*)
+			| ADD -> 
+				let x::y::sstack'= sstack in
+				(match x, y with 
+					| S _, S _ -> 
+						[Mov (x, eax); Add (eax, y)], y::sstack'
+			| _ -> [Add (x, y)], y::sstack')
+			| MUL -> 
+				let x::y::sstack'= sstack in
+				(match x, y with 
+					| S _, S _ -> 
+				[		Mov (x, eax); Mul (eax, y)], y::sstack'
+					| _ -> [Mul (x, y)], y::sstack')
+
           in
           let (code', sstack'') = sint prg' sstack' in
           code @ code', sstack''
-(*
-    let compile stmt = 
-      sint (comp stmt) 
-*)
+
+	let printAsmCode instr =
+	  let opStr op =
+		match op with
+		| R i -> regs.(i)
+		| S i -> Printf.sprintf "-%d(%%ebp)" (i * wordSize)
+		| L i -> Printf.sprintf "$%d" i
+		| M x -> x
+	  in
+	  match instr with
+	  | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s" (opStr x) (opStr y)
+	  | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (opStr x) (opStr y)
+	  | Mov       (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (opStr x) (opStr y)
+	  | Push           x -> Printf.sprintf "pushl\t%s" (opStr x)
+	  | Pop            x -> Printf.sprintf "popl\t%s"  (opStr x)
+	  | Call           f -> Printf.sprintf "call\t%s" f
+	  | Ret              -> "ret"
+	  
+	  	let toAsm prog =
+	  let allText = ref "" in
+      let append = fun newText -> allText := Printf.sprintf "%s%s" !allText newText in
+	  
+	  let execM = fun _ -> () in
+	
+	  let code = sint (comp prog) [] in
+      append "\t.text\n\t.globl\tmain\n";
+	  List.iter
+		(fun x -> append (Printf.sprintf "\t.comm\t%s,\t%d,\t%d\n" x wordSize wordSize))
+		(StringSet.elements !variables);
+	  append "main:\n";
+	  if !stackAddDep != 0 then
+		 execM [append "\tpushl\t%ebp\n"; append "\tmovl\t%esp,\t%ebp\n";append (Printf.sprintf "\tsubl\t$%d,\t%%esp\n" (!stackAddDep * wordSize))];
+	  List.iter
+		(fun i -> append (Printf.sprintf "\t%s\n" (printAsmCode i)))
+		(fst code);
+	  if !stackAddDep != 0 then
+		 execM [append "\tmovl\t%ebp,\t%esp\n";append "\tpopl\t%ebp\n"];
+	  append "\txorl\t%eax,\t%eax\n";
+	  append "\tret\n";
+	  !allText;
   end
