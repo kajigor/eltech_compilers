@@ -35,7 +35,11 @@ let p =
 let _ =
   Printf.printf "%s\n" (show(list) (show(int)) @@ run p [10; 20]);
   Printf.printf "%s\n" (show(list) (show(int)) @@ srun (comp p) [10; 20])
-
+  (* Printf.printf "%s\n" (X86.genasm p); *)
+  let outf = open_out "genasm.s" in
+  Printf.fprintf outf "%s\n" (X86.genasm p);
+  close_out outf
+  
 let gen n =
   let rec gen_read n i =
     if i > n 
