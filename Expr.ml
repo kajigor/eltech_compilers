@@ -176,17 +176,17 @@ module X86 =
 		
 	let printInstr instr =
 	  match instr with
-	  | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s" (opnd x) (opnd y)
-	  | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (opnd x) (opnd y)
-	  | Mov (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (opnd x) (opnd y)
-	  | Push           x -> Printf.sprintf "pushl\t%s" (opnd x)
-	  | Pop            x -> Printf.sprintf "popl\t%s"  (opnd x)
+	  | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s" (printOp x) (printOp y)
+	  | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (printOp x) (printOp y)
+	  | Mov (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (printOp x) (printOp y)
+	  | Push           x -> Printf.sprintf "pushl\t%s" (printOp x)
+	  | Pop            x -> Printf.sprintf "popl\t%s"  (printOp x)
 	  | Call           f -> Printf.sprintf "call\t%s" f
 	  | Ret              -> "ret"
 
 	
 	let printAsmCode code = let str_instr = List.fold_left (fun acc i -> Printf.sprintf "%s\t%s\n" acc (printInstr i)) ("") (fst code) in 
-							(* Need for get information from stack/heap*)
+							(* Need for work with stack/heap*)
 							if !stack_size != 0  then "\tpushl\t%%ebp\n" ^
 													  "\tmovl\t%%esp,\t" ^
 													  (Printf.sprintf "%%ebp\n\tsubl\t$%d,%%esp\n" (!stack_size * word_size)) ^
