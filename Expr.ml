@@ -162,7 +162,7 @@ module X86 =
 				let s :: sstack' = sstack in
 				(* вызов С++ функции для вывода в stdout *)
 				(* запишем из S в AX, т.к. нужно передать как параметр в fnwrite *)
-				[Mov (s, eax);Push eax; Call "fnwrite"; Pop eax], sstack'
+				[Push eax; Call "fnwrite"; Pop eax], sstack'
 			| ADD -> 
 				let x::y::sstack'= sstack in
 				(match x, y with 
