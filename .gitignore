@@ -3,3 +3,6 @@
 /Driver.cmo
 /Expr.cmi
 /Expr.cmo
+
+*.cmo
+*.cmi
