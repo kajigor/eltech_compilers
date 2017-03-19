@@ -143,10 +143,12 @@ module X86 =
 	let allocate stack =
 	  match stack with
 	  | []                                -> R 0
-	  | (S n)::_                          -> stackAddDep := max (n+2) !stackAddDep; S (n+1)
+	  
+		| (S n)::_                          -> stackAddDep := max (n+2) !stackAddDep; S (n+1)
 		(* используем регистры общего назначения [ax-dx] *)
 	  | (R n)::_ when n < nregs - 3 -> R (n+1)
-	  | _                                 -> stackAddDep := max 1 !stackAddDep; S 0
+	  
+		| _                                 -> stackAddDep := max 1 !stackAddDep; S 0
 	
 	(*  *)
     let rec sint prg sstack =
@@ -158,19 +160,23 @@ module X86 =
 	    	  | PUSH n -> 
                 let s = allocate sstack in
                 [Mov (L n, s)], s :: sstack
-          | LD x ->
+          
+					| LD x ->
 							variables := StringSet.add x !variables;
             	let s = allocate sstack in
               [Mov (M x, s)], s :: sstack
-	    		| ST x ->
+	    		
+					| ST x ->
 							variables := StringSet.add x !variables;
             	let s :: sstack' = sstack in
               [Mov (s, M x)], sstack'
+					
 					(* вызов С++ функции для чтения из stdin *)
 					| READ -> [Call "fnread"], [eax]
 					(* вызов С++ функции для вывода в stdout *)
 					| WRITE -> let s :: sstack' = sstack in
 						[Mov (s, eax); Push eax; Call "fnwrite"; Pop eax], sstack'
+					
 					| ADD -> 
 						let x::y::sstack'= sstack in
 						
