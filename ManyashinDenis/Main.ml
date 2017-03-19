@@ -53,7 +53,9 @@ type instr =
 | READ
 | WRITE
 | PUSH of int
+(* Инструкция LD x означает "возьми значение, ассоциированое с переменной x, и положи его на стек". (load) *)
 | LD   of string
+(* Инструкция ST x означает "возьми значение, лежащее на верхушке стека и ассоциируй его с переменной x" (store) *)
 | ST   of string
 | ADD  
 | MUL
@@ -71,16 +73,15 @@ let stack_machine_run prg input =
                      (z :: stack, st, input', output)
           | WRITE -> let z :: stack' = stack in
                      (stack', st, input, output @ [z])
-	  | PUSH n -> (n :: stack, st, input, output)
-          | LD   x -> (st x :: stack, st, input, output)
-	  | ST   x -> let z :: stack' = stack in
+	  			| PUSH n -> (n :: stack, st, input, output)
+          
+					| LD   x -> (st x :: stack, st, input, output)
+	  			
+					| ST   x -> let z :: stack' = stack in
                       (stack', update st x z, input, output)
-	  | _ -> let y :: x :: stack' = stack in
-                 ((match i with ADD -> (+) | _ -> ( * )) x y :: stack', 
-                  st, 
-                  input, 
-                  output
-                 )
+	  			
+					| _ -> let y :: x :: stack' = stack in
+                 ((match i with ADD -> (+) | _ -> ( * )) x y :: stack', st, input, output)
         )
   in
   (* todo что это значит?*)
@@ -152,7 +153,7 @@ module X86 =
       match prg with
       | []        -> [], []
       | i :: prg' ->
-          let (code, sstack') = 
+					let (code, sstack') = 
 	    	  match i with
 	    	  | PUSH n -> 
                 let s = allocate sstack in
@@ -165,35 +166,32 @@ module X86 =
 							variables := StringSet.add x !variables;
             	let s :: sstack' = sstack in
               [Mov (s, M x)], sstack'
-					| READ -> 
-						(* вызов С++ функции для чтения из stdin *)
-					[Call "fnread"], [eax]
-			
-					| WRITE -> 
-						let s :: sstack' = sstack in
+					(* вызов С++ функции для чтения из stdin *)
+					| READ -> [Call "fnread"], [eax]
 					(* вызов С++ функции для вывода в stdout *)
-					(* запишем из S в AX, т.к. нужно передать как параметр в fnwrite *)
-					[Mov (s, eax); Push eax; Call "fnwrite"; Pop eax], sstack'
-			
+					| WRITE -> let s :: sstack' = sstack in
+						[Mov (s, eax); Push eax; Call "fnwrite"; Pop eax], sstack'
 					| ADD -> 
 						let x::y::sstack'= sstack in
+						
 						(match x, y with 
-						| S _, S _ -> 
-							(*оба в стеке, достанем x и можно совершать операции, то же самое для mul*)
-							[Mov (x, eax); Add (eax, y)], y::sstack'
-						| _ -> [Add (x, y)], y::sstack')
+							| S _, S _ -> 
+								(*оба в стеке, достанем x и можно совершать операции, то же самое для mul*)
+								[Mov (x, eax); Add (eax, y)], y::sstack'
+
+							| _ -> [Add (x, y)], y::sstack'
+						)
 			
 					| MUL -> 
 						let x::y::sstack'= sstack in
 							(match x, y with 
-					| S _, S _ -> 
-							[Mov (x, eax); Mul (eax, y)], y::sstack'
-					| _ -> [Mul (x, y)], y::sstack')
+								| S _, S _ -> 
+										[Mov (x, eax); Mul (eax, y)], y::sstack'
+								| _ -> [Mul (x, y)], y::sstack'
+					)
           in
-          (* todo что непонятное *)
-		  let (code', sstack'') = sint prg' sstack' in
-          
-		  code @ code', sstack''
+					let (code', sstack'') = sint prg' sstack' in
+          code @ code', sstack''
 
 	(* Команда для печати ассемблерного кода в свой *)
 	let printAsmCode instr =
@@ -222,7 +220,7 @@ module X86 =
 	let toAsm prog =
 	  let allText = ref "" in
       (* добавляет текст к allText *)
-      let append = fun newText -> allText := Printf.sprintf "%s%s" !allText newText in
+    let append = fun newText -> allText := Printf.sprintf "%s%s" !allText newText in
 	  
       (* что-то вроде T из лиспа *)
 	  let execM = fun _ -> () in
@@ -231,8 +229,7 @@ module X86 =
       (*Предварительные команды*)
 	  append "\t.text\n\t.globl\tmain\n";
 	  (* Блок переменных*)
-	  List.iter
-		(fun x -> append (Printf.sprintf "\t.comm\t%s,\t%d,\t%d\n" x wordSize wordSize))
+	  List.iter (fun x -> append (Printf.sprintf "\t.comm\t%s,\t%d,\t%d\n" x wordSize wordSize))
 		(StringSet.elements !variables);
 	  append "main:\n";
 	  (* Тут начинается блок Main*)
