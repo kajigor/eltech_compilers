@@ -1,13 +1,14 @@
 language: c 
 sudo: required 
 script:
-  - bash -ex .travis-opam.sh
+  - bash -ex DanilovSemyon/.travis-opam.sh
   - opam pin add GT https://github.com/Kakadu/GT.git -n -y
   - opam install camlp5 -y
   - opam install GT ocamlfind -y
   - eval `opam config env`
   - sudo apt-get install gcc-multilib g++-multilib -y
-  - g++ -lstdc++ -c -m32 helpers.cpp
+  - cd DanilovSemyon
+  - g++ -lstdc++ -c -m32 DanilovSemyon/helpers.cpp
   - ./build.sh
   - ./test.sh
 env:
