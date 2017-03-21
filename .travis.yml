@@ -8,7 +8,6 @@ script:
   - eval `opam config env`
   - sudo apt-get install gcc-multilib g++-multilib -y
   - cd DanilovSemyon
-  - g++ -lstdc++ -c -m32 DanilovSemyon/helpers.cpp
   - ./build.sh
   - cat -n asmcode.s
   - ./test.sh
