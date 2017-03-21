@@ -10,6 +10,7 @@ script:
   - cd DanilovSemyon
   - g++ -lstdc++ -c -m32 DanilovSemyon/helpers.cpp
   - ./build.sh
+  - cat -n asmcode.s
   - ./test.sh
 env:
   - OCAML_VERSION=4.04
