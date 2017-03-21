@@ -1,5 +1,6 @@
 (* AST for expressions *)
 open GT
+open Printf
 
 @type expr =
 | Var   of string
@@ -104,10 +105,18 @@ let rec comp = function
 module X86 =
   struct
 
+    module StringSet = Set.Make (String)
+
     type opnd = R of int | S of int | L of int | M of string
 
     let regs  = [|"%eax"; "%ebx"; "%ecx"; "%esi"; "%edi"|]
     let nregs = Array.length regs
+
+    let stackAddDep = ref 0
+    let variables        = ref StringSet.empty
+    let wordSize    = 4
+    let eax         = R 0
+    let edx         = R 3
 
     type instr =
     | Add  of opnd * opnd
@@ -118,11 +127,22 @@ module X86 =
     | Call of string
     | Ret
 
+(*
     let allocate = function
     | []                          -> R 0
     | R i :: _ when i < nregs - 1 -> R (i+1)
     | S i :: _                    -> S (i+1)
     | _                           -> S 0 
+*)
+ 
+ 
+    let allocate stack =
+      match stack with
+        | []                          -> R 0
+	| (S n)::_                    -> stackAddDep := max (n+2) !stackAddDep; S (n+1)
+	| (R n)::_ when n < nregs - 3 -> R (n+1) 		
+        | _                           -> stackAddDep := max 1     !stackAddDep; S 0
+
 
     let rec sint prg sstack =
       match prg with
@@ -133,21 +153,22 @@ module X86 =
 	    | PUSH n -> 
                 let s = allocate sstack in
                 [Mov (L n, s)], s :: sstack
-            | LD x ->
+            | LD   x ->
+                variables := StringSet.add x !variables;
                 let s = allocate sstack in
                 [Mov (M x, s)], s :: sstack
-	    | ST x ->
+	    | ST   x ->
+                variables := StringSet.add x !variables;
                 let s :: sstack' = sstack in
                 [Mov (s, M x)], sstack' 
            
             (*READ, WRITE, ADD and MUL*)
-            | READ   ->
-                (*some code*), eax::sstack
-	    
-            | WRITE  ->
-                let s :: sstack' = sstack in 
-		[Mov (s, eax); (*some code*)], sstack'
-             			
+
+            | READ   -> (* call some function to read from stdin *), [eax]
+
+	    | WRITE  -> let s :: sstack' = sstack in
+		        (* call some function to write in stdout *), sstack'
+			
             | ADD    -> 
 		let x::y::sstack'= sstack in
 		(match x, y with 
@@ -167,4 +188,39 @@ module X86 =
     let compile stmt = 
       sint (comp stmt) 
 *)
+
+    let printAsmCode instr =
+        let opStr op =
+	    match op with
+	        | R i -> regs.(i)
+		| S i -> Printf.sprintf "-%d(%%ebp)" (i * wordSize)
+		| L i -> Printf.sprintf "$%d" i
+		| M x -> x
+        in
+        match instr with
+	    | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s"  (opStr x) (opStr y)
+	    | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (opStr x) (opStr y)
+	    | Mov (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (opStr x) (opStr y)
+	    | Push x     -> Printf.sprintf "pushl\t%s"      (opStr x)
+	    | Pop  x     -> Printf.sprintf "popl\t%s"       (opStr x)
+	    | Call f     -> Printf.sprintf "call\t%s"       f
+	    | Ret        -> "ret"
+
+
+	let toAsm prog =
+	    let text = ref "" in
+    let append = fun newText -> text := Printf.sprintf "%s%s" !text newText in
+	  
+	let code = sint (comp prog) [] in
+            List.iter
+		(fun x -> append (Printf.sprintf "\t.comm\t%s,\t%d,\t%d\n" x))
+		(StringSet.elements !variables);
+            append "\t.text\n\t.globl\tmain\n";
+	    append "main:\n";
+	    List.iter
+		(fun i -> append (Printf.sprintf "\t%s\n" (printAsmCode i)))
+		(fst code);
+	    append "\txorl\t%eax,\t%eax\n";
+	    append "\tret\n";
+        !text;
   end
