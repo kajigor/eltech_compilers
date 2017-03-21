@@ -19,13 +19,6 @@ let (:=) x e = Assign (x, e)
 let skip     = Skip
 let (|>) l r = Seq (l, r)
 
-(*
-  read (x);
-  read (y);
-  z := x * y;
-  write (z)
-*)
-  
 let p =
   read "x" |>
   read "y" |>
@@ -36,6 +29,14 @@ let _ =
   Printf.printf "%s\n" (show(list) (show(int)) @@ run p [10; 20]);
   Printf.printf "%s\n" (show(list) (show(int)) @@ srun (comp p) [10; 20])
 
+  let outf = open_out "asm.s" in
+  Printf.fprintf outf "%s\n" (X86.toAsm p);
+  close_out outf;
+  Printf.printf "-------------\n";
+  Printf.printf "GNU assembler source in asm.s file\nUse gcc asm.s to compile\n";
+  Printf.printf "-------------\n"
+
+(*
 let gen n =
   let rec gen_read n i =
     if i > n 
@@ -49,7 +50,4 @@ let gen n =
   in
   gen_read n 0 |>
   write @@ gensum n 0
-
-(*let _ =
-  Printf.printf "%s" (show(stmt) @@ gen 300)
 *)
