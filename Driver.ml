@@ -1,10 +1,6 @@
+open Language
 open Expr
-open GT
-
-(* EDSL = Embedded Domain-Specific Language
-          Встроенный предметно-ориентированный язык
-   Deep Embedding
-*)
+open Stmt
 
 let inc x = x+1
 
@@ -19,37 +15,20 @@ let (:=) x e = Assign (x, e)
 let skip     = Skip
 let (|>) l r = Seq (l, r)
 
-(*
-  read (x);
-  read (y);
-  z := x * y;
-  write (z)
-*)
-  
-let p =
+let parse filename = 
   read "x" |>
   read "y" |>
   ("z" := !"x" * !"y" + const 1) |>
   write !"z"
 
 let _ =
-  Printf.printf "%s\n" (show(list) (show(int)) @@ run p [10; 20]);
-  Printf.printf "%s\n" (show(list) (show(int)) @@ srun (comp p) [10; 20])
-
-let gen n =
-  let rec gen_read n i =
-    if i > n 
-    then skip
-    else read (Printf.sprintf "x%d" i) |> gen_read n (inc i)
-  in
-  let rec gensum n i =
-    if i > n 
-    then Const 0
-    else !(Printf.sprintf "x%d" i) + gensum n (inc i)
-  in
-  gen_read n 0 |>
-  write @@ gensum n 0
-
-(*let _ =
-  Printf.printf "%s" (show(stmt) @@ gen 300)
-*)
+  match Sys.argv with
+  | [|_; filename|] ->
+      let basename = Filename.chop_suffix filename ".expr" in      
+      let text = X86.compile (parse filename) in
+      let asm  = basename ^ ".s" in
+      let ouch = open_out asm   in
+      Printf.fprintf ouch "%s\n" text;
+      close_out ouch;
+      let runtime = try Sys.getenv "RUNTIME" with _ -> "../runtime" in
+      Sys.command (Printf.sprintf "gcc -m32 -o %s %s/runtime.o %s.s" basename runtime basename)
