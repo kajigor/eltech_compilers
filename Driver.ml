@@ -18,7 +18,8 @@ let (|>) l r = Seq (l, r)
 let parse filename = 
   read "x" |>
   read "y" |>
-  ("z" := !"x" * !"y" + const 1) |>
+  read "z" |>
+  ("z" := !"z" * (!"x" * !"y" + const 1)) |>
   write !"z"
 
 let _ =
