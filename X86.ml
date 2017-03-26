@@ -71,11 +71,19 @@ let rec sint env prg sstack =
         | LD x ->
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
-            env'', [Mov (M x, s)], s :: sstack
+            env'', (
+			match s with
+			| S _ -> 	[Mov (M x, edx); Mov (edx, s)]
+			| _ ->		[Mov (M x, s)]
+		  ), s :: sstack
 	| ST x ->
-            let env' = env#local x in
+            let env' = env#local x in	(*правильно ли это? нам незачем добавлять в env переменную x, когда она там уже есть*)
             let s :: sstack' = sstack in
-            env', [Mov (s, M x)], sstack' 
+            env', (
+			match s with
+			| S _ -> 	[Mov (s, edx); Mov (edx, M x)] (*такая ситуация не может возникнуть в данной версии языка, но пусть будет*)
+			| _ ->		[Mov (s, M x)]
+		  ), sstack' 
         | READ  ->
             env, [Call "lread"], [eax]
         | WRITE ->
