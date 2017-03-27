@@ -1,9 +1,11 @@
-cp Main.ml Build/
-cp func.cpp Build/
+cp *.ml Build/
+cp runtime.c Build/
+cp Makefile Build/
 cd Build
-g++ -lstdc++ -c -m32 func.cpp -o func.o
+gcc -m32 -c runtime.c -o runtime.o
+RUNTIME=. ./compiler file.expr
 make all
 ./Main
-g++ -lstdc++ -m32 -o ../application func.o main.s
+g++ -lstdc++ -m32 -o ../application runtime.o main.s
 
 cd ../
