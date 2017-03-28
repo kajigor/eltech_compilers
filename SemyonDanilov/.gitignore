@@ -1,6 +1,6 @@
 /Driver
-/file
-/compiler
+file
+compiler
 *.cmi
 *.cmo
 *.o
