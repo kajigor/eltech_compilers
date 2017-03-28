@@ -71,19 +71,19 @@ let rec sint env prg sstack =
         | LD x ->
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
-			env'', 
-				(match s with
-				| S _ -> [Mov (M x, edx); Mov (edx, s)]
-				| _   -> [Mov (M x, s)]
-				), s :: sstack
-		| ST x ->
+		env'', 
+			(match s with
+			| S _ -> [Mov (M x, edx); Mov (edx, s)]
+			| _   -> [Mov (M x, s)]
+			), s :: sstack
+	| ST x ->
             let env' = env#local x in
             let s :: sstack' = sstack in
             env', 
-				(match s with 
-				| S _ -> [Mov (s, edx); Mov (edx, M x)]
-				| _   -> [Mov (s, M x)]
-				), sstack' 
+			(match s with 
+			| S _ -> [Mov (s, edx); Mov (edx, M x)]
+			| _   -> [Mov (s, M x)]
+			), sstack' 
         | READ  ->
             env, [Call "lread"], [eax]
         | WRITE ->
