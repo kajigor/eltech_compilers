@@ -16,10 +16,8 @@ let skip     = Skip
 let (|>) l r = Seq (l, r)
 
 let parse filename = 
-  read "x" |>
-  read "y" |>
-  read "z" |>
-  ("z" := !"z" * (!"x" * !"y" + const 1)) |>
+  ("x" := const 10)|>
+  ("z" := const 1 * (const 2 * (const 3 * (const 4 * (const 5 * (const 6 * (const 7 * (const 8 * (const 9 * !"x"))))))))) |>
   write !"z"
 
 let _ =

@@ -1,5 +1,7 @@
-/Driver
-/Driver.cmi
-/Driver.cmo
-/Expr.cmi
-/Expr.cmo
+*.cmi
+*.cmo
+file
+file.s
+compiler
+runtime.o
+
