@@ -16,11 +16,9 @@ let skip     = Skip
 let (|>) l r = Seq (l, r)
 
 let parse filename = 
-  read "x" |>
-  read "y" |>
-  read "z" |>
-  ("z" := !"z" * (!"x" * !"y" + const 1)) |>
-  write !"z"
+  ("x" := const 1) |>
+  ("y" := !"x" + (!"x" + (!"x" + (!"x" + (!"x" + ( !"x" + !"x") ) ) ) ) ) |>
+  write !"y"
 
 let _ =
   match Sys.argv with
