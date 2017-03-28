@@ -36,25 +36,12 @@ module Interpret =
             | READ  -> let z :: input' = input in
               (z :: stack, st, input', output)
             | WRITE -> let z :: stack' = stack in
-              	(stack', st, input, output @ [z])
-	    	| PUSH n -> (n :: stack, st, input, output)
-            | LD   
-				let env' = env#local x in
-            	let env'', s = env'#allocate sstack in
-				env'', 
-					(match s with
-					| S _ -> [Mov (M x, edx); Mov (edx, s)]
-					| _   -> [Mov (M x, s)]
-					), s :: sstack
-	    	| ST   
-				let env' = env#local x in
-	            let s :: sstack' = sstack in
-	            env', 
-					(match s with 
-					| S _ -> [Mov (s, edx); Mov (edx, M x)]
-					| _   -> [Mov (s, M x)]
-					), sstack' 
-		    | _ -> let y :: x :: stack' = stack in
+              (stack', st, input, output @ [z])
+	    | PUSH n -> (n :: stack, st, input, output)
+            | LD   x -> (st x :: stack, st, input, output)
+	    | ST   x -> let z :: stack' = stack in
+              (stack', update st x z, input, output)
+	    | _ -> let y :: x :: stack' = stack in
               ((match i with ADD -> (+) | _ -> ( * )) x y :: stack', 
                st, 
                input, 
