@@ -47,13 +47,13 @@ class env =
   object (this)
     val locals = S.empty
     val depth  = 0
-	
+  
     method allocate = function
       | []                          -> this, R 0
       | R i :: _ when i < nregs - 1 -> this, R (i+1)
       | S i :: _                    -> {< depth = max depth (i+1) >}, S (i+1)
       | _                           -> {< depth = max depth 1 >}, S 1 
-	    
+      
     method local     x = {< locals = S.add x locals >}
     method get_locals  = S.elements locals
     method get_depth   = depth
@@ -64,18 +64,24 @@ let rec sint env prg sstack =
   | []        -> env, [], []
   | i :: prg' ->
       let env, code, sstack' = 
-	match i with
-	| PUSH n ->  
+  match i with
+  | PUSH n ->  
             let env', s = env#allocate sstack in
             env', [Mov (L n, s)], s :: sstack
         | LD x ->
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
-            env'', [Mov (M x, s)], s :: sstack
-	| ST x ->
+            env'', (match s with
+                        | S _ -> [Mov (M x, eax); Mov (eax, s)] 
+                        |   _ -> [Mov (M x, s)])
+            , s :: sstack
+  | ST x ->
             let env' = env#local x in
             let s :: sstack' = sstack in
-            env', [Mov (s, M x)], sstack' 
+            env', (match s with 
+                         | S _ -> [Mov (s, eax); Mov (eax, M x)]
+                         |   _ -> [Mov (s, M x)])
+                , sstack' 
         | READ  ->
             env, [Call "lread"], [eax]
         | WRITE ->
@@ -88,13 +94,13 @@ let rec sint env prg sstack =
               | _        -> env, [op x y], sstack'   
             )
               (match i with 
-	      | MUL -> fun x y -> Mul (x, y)
-	      | ADD -> fun x y -> Add (x, y)
+        | MUL -> fun x y -> Mul (x, y)
+        | ADD -> fun x y -> Add (x, y)
               )
       in
       let env, code', sstack'' = sint env prg' sstack' in
       env, code @ code', sstack''
-	
+  
 let compile p = 
   let env, code, [] = sint (new env) (Compile.Program.compile p) [] in
   let buf   = Buffer.create 1024 in
@@ -112,5 +118,4 @@ let compile p =
   out "\tmovl\t%ebp,%esp\n";
   out "\tpopl\t%ebp\n";
   out "\tret\n";
-  Buffer.contents buf
-    
+  Buffer.contents buf  
