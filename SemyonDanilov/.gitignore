@@ -1,8 +1,9 @@
 /Driver
 file
 compiler
-**.cmi
-**.cmo
-**.o
-**.s
-
+*.cmi
+*.cmo
+*.o
+*.s
+/*.cmi
+/*.cmo
