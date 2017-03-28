@@ -5,7 +5,7 @@ cd Build
 gcc -m32 -c runtime.c -o runtime.o
 RUNTIME=. ./compiler file.expr
 make all
-./Main
-g++ -lstdc++ -m32 -o ../application runtime.o main.s
+./compiler
+g++ -lstdc++ -m32 -o ../application runtime.o file.s
 
 cd ../
