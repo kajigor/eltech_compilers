@@ -1,5 +1,4 @@
 /Driver
-/Driver.cmi
-/Driver.cmo
-/Expr.cmi
-/Expr.cmo
+*.cmi
+*.cmo
+*.o
