@@ -4,19 +4,38 @@ open Stmt
 open Ostap
 open GT
 
-ostap (
+(*ostap (
   expr : expr "+" expr 
-)
+)*)
 
 ostap (
-  expr: x:mull "+" y:expr {Add (x,y)} 
+  (*expr: x:mull "+" y:expr {Add (x,y)} 
       | mull;
   mull: x:prim "*" y:mull {Mul (x,y)}
       | prim; 
   prim: n:DECIMAL {Const n}  
       | e:IDENT   {Var e}
-      | -"(" expr -")"
+      | -"(" expr -")"*)
 (*       | "(" e:expr ")" {e} *)
+  oprd	: n:DECIMAL {Const n}
+	| e:IDENT {Var e}
+	| -"(" expr -")";
+
+  expr	: mul
+	| sum
+       (*sub*)
+	| oprd; 
+
+  sum	: x:ss_o "+" y:expr {Add(x,y)};
+
+  ss_o	: mul
+	| oprd;
+
+  mul	: x:oprd "*" y:mul  {Mul (x,y)}
+	| x:oprd "*" y:oprd {Mul (x,y)} 
+(*exapmle for sub operation
+  sub	: x:expr "-" y:ss_o {Sub (x,y)}*)
+ 
 )
 
 ostap (
