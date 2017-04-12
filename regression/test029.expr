@@ -11,7 +11,7 @@ fun readArray (A)
 begin
   for i:=0, i<arrlen (A), i:=i+1
   do
-    A[i] := read ()
+    A[i]read ()
   od;
   return A
 end

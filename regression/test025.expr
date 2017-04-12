@@ -6,5 +6,5 @@ begin
   fi
 end
 
-n := read ();
+read (n);
 write (fact (n))

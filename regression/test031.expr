@@ -34,7 +34,7 @@ end
 
 fun readList ()
 begin
-  n := read ();
+  read (n);
   L := nil ();
   while n >= 0 do
     L := cons ([read()], L);

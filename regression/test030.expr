@@ -18,15 +18,15 @@ end
 
 fun readMatrix ()
 begin
-  rs := read ();
-  cs := read ();
+  read (rs);
+  read (cs);
 
   M := Arrmake (rs, {});
 
   for i := 0, i < rs, i := i+1 do
     Mi := arrmake (cs, 0);
     for j := 0, j < cs, j := j+1 do
-      Mi[j] := read ()
+      Mi[j]read ()
     od;
     M[i] := Mi
   od;

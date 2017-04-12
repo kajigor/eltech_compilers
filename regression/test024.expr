@@ -5,5 +5,5 @@ fun fib (n) begin
   fi   
 end
 
-n := read ();
+read (n);
 write (fib (n))

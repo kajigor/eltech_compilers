@@ -6,6 +6,6 @@ begin
   fi
 end
 
-m := read ();
-n := read ();
+read (m);
+read (n);
 write (A (m, n))
