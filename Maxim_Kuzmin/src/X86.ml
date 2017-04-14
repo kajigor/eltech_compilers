@@ -19,7 +19,10 @@ type instr =
   | Call of string
   | Ret
   | OrBin of opnd * opnd
-  | Setne
+  | AndBin of opnd * opnd
+  | Cmp of opnd * opnd
+  | Setne of string
+  | Sete of string
 
 let to_string buf code =      
   let instr =
@@ -38,7 +41,10 @@ let to_string buf code =
       | Call x        -> Printf.sprintf "call\t%s"      x
       | Ret           -> "ret"
       | OrBin (x, y)  -> Printf.sprintf "orl\t%s,%s"   (opnd x) (opnd y)
-      | Setne         -> Printf.sprintf "setne\t%s"    dl
+      | AndBin (x, y) -> Printf.sprintf "andl\t%s,%s"  (opnd x) (opnd y)
+      | Cmp (x, y)    -> Printf.sprintf "cmpl\t%s,%s"  (opnd x) (opnd y)
+      | Setne x       -> Printf.sprintf "setne\t%s"    x
+      | Sete x        -> Printf.sprintf "sete\t%s"     x
   in
   let out s = 
     Buffer.add_string buf "\t"; 
@@ -104,20 +110,31 @@ let rec sint env prg sstack =
 
       | _ ->
         let x::(y::_ as sstack') = sstack in
+        let andcode = [Mov (y, edx); AndBin (y, edx); (*compare y with self*)
+                       Mov (L 0, edx); Setne dl; Mov (edx, y); (*put result in y*)
+                       Mov (x, edx); AndBin (x, edx); (*compare x with self*)
+                       Mov (L 0, edx); Setne dl; (*put result in edx*)
+                       AndBin (y, edx); Mov (L 0, edx); Setne dl; (*compare y with edx and put result in edx*)
+                       Mov (edx, y)] (*put result to y*) in
+
           match x, y with
-          | S _, S _ -> 
-            let shortcode arr = env, [Mov (y, edx)] @ arr @ [Mov (edx, y)], sstack' in
+          | S _, S _ ->
+            let short arr = env, [Mov (y, edx)] @ arr @ [Mov (edx, y)], sstack' in
             (match i with
-            | MUL -> shortcode [Mul(x, edx)]
-            | ADD -> shortcode [Add(x, edx)]
-            | OR  -> shortcode [OrBin(x, edx); Mov (L 0, edx); Setne;]
+            | MUL   -> short [Mul(x, edx)]
+            | ADD   -> short [Add(x, edx)]
+            | OR    -> short [OrBin(x, edx); Mov (L 0, edx); Setne dl]
+            | AND   -> env, andcode, sstack'
+            | EQUAL -> short [Cmp(x, edx); Mov (L 0, edx); Sete dl]
             )
-          | _ -> 
-            let shortcode codearr = env, codearr, sstack' in
+          | _ ->
+            let short codearr = env, codearr, sstack' in
             (match i with
-            | MUL -> shortcode [Mul(x, y)]
-            | ADD -> shortcode [Add(x, y)]
-            | OR  -> shortcode [OrBin(x, y); Mov (L 0, edx); Setne; Mov (edx, y)]
+            | MUL  -> short [Mul(x, y)]
+            | ADD  -> short [Add(x, y)]
+            | OR   -> short [OrBin(x, y); Mov (L 0, edx); Setne dl; Mov (edx, y)]
+            | AND  -> env, andcode, sstack'
+            | EQUAL -> short [Cmp(x, y); Mov (L 0, edx); Sete dl; Mov (edx, y)]
             )   
     in
     let env, code', sstack'' = sint env prg' sstack' in

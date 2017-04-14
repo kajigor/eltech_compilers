@@ -38,11 +38,11 @@ let main =
       read (acc @ [r]) 
           with End_of_file -> acc
   in
-  let input = read [] in  
+  (*let input = read [] in  *)
   let output = 
     if interpret 
-    then Interpret.Program.eval prog input 
-    else StackMachine.Interpret.run (StackMachine.Compile.Program.compile prog) input
+    then Interpret.Program.eval prog (*input*) []
+    else StackMachine.Interpret.run (StackMachine.Compile.Program.compile prog) (*input*) []
   in
   List.iter (fun i -> Printf.printf "%d\n" i) output
     | `Fail er -> Printf.eprintf "Syntax error: %s\n" er

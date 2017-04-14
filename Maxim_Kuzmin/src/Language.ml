@@ -10,13 +10,17 @@ module Expr =
     | Add   of t * t
     | Mul   of t * t 
     | Or    of t * t
+    | And   of t * t
+    | Equal of t * t
 
     let rec expr_parser s =                                                                                    
       expr id
-      [|                                                                                            
+      [|     
+        `Lefta , [ostap ("||"), (fun x y -> Or (x, y))];    
+        `Lefta , [ostap ("&&"), (fun x y -> And (x, y))]; 
+        `Lefta , [ostap ("=="), (fun x y -> Equal (x, y))];                                                                                  
         `Lefta , [ostap ("+"), (fun x y -> Add (x, y))]; 
-        `Lefta , [ostap ("*"), (fun x y -> Mul (x, y))];
-        `Lefta , [ostap ("||"), (fun x y -> Or (x, y))]  
+        `Lefta , [ostap ("*"), (fun x y -> Mul (x, y))]
       |]                                                                                            
       expr' s                                                                                             
       and 
@@ -44,12 +48,12 @@ module Stmt =
     ostap (
       simp: 
         x:IDENT ":=" e:expr_parser        {Assign (x, e)}
-        | %"read" "(" x:IDENT ")"              {Read x}
+        | %"read" "(" x:IDENT ")"         {Read x}
         | %"write" "(" e:expr_parser ")"  {Write e}
-        | %"skip"                              {Skip};
+        | %"skip"                         {Skip};
           
       parse: 
-        s:simp ";" d:parse                      {Seq (s,d)}
+        s:simp ";" d:parse                {Seq (s,d)}
         | simp 
     )
 
