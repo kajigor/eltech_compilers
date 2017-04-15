@@ -2,7 +2,16 @@ open StackMachine
 open Instr
 
 type opnd = R of int | S of int | L of int | M of string
-
+(* EAX, ECX, EDX *)
+(* eax - return value of func *)
+(* ecx - type of return of func *)
+(* eax, ecx, edx - for free use *)
+(* ESP, EBP *)
+(* esp - stack pointer *)
+(* ebp - for save stack frame *)
+(* EBX, ESI, EDI *)
+(* ebx - do not use so far *)
+(* esi, edi - needs to be saved and restore *)
 let regs  = [|"%eax"; "%ebx"; "%ecx"; "%esi"; "%edi"; "%edx"; "%esp"; "%ebp"|]
 let nregs = Array.length regs - 3
 
@@ -10,12 +19,18 @@ let [|eax; ebx; ecx; esi; edi; edx; esp; ebp|] = Array.mapi (fun i _ -> R i) reg
 
 type instr =
 | Add  of opnd * opnd
+| Sub  of opnd * opnd
 | Mul  of opnd * opnd
+| Div  of opnd * opnd
+| Mod  of opnd * opnd
+| Or   of opnd * opnd
 | Mov  of opnd * opnd
 | Push of opnd
 | Pop  of opnd
 | Call of string
 | Ret
+| Cmd  of opnd * opnd
+| SET of 
 
 let to_string buf code =      
   let instr =
@@ -64,7 +79,7 @@ let rec sint env prg sstack =
   | []        -> env, [], []
   | i :: prg' ->
       let env, code, sstack' = 
-	match i with
+	match i withhttps://news.yandex.ru/
 	| PUSH n ->  
             let env', s = env#allocate sstack in
             env', [Mov (L n, s)], s :: sstack

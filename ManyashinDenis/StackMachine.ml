@@ -8,8 +8,19 @@ module Instr =
       | PUSH of int
       | LD   of string
       | ST   of string
-      | ADD  
+      | ADD
+      | SUB  
       | MUL
+      | DIV
+      | MOD
+      | OR
+      | AND
+      | EQUAL
+      | NOT_EQUAL
+      | LESS
+      | MORE
+      | MORE_EQUAL
+      | LESS_EQUAL
 
   end
 
@@ -42,8 +53,24 @@ module Interpret =
 	    | ST   x -> let z :: stack' = stack in
               (stack', update st x z, input, output)
 	    | _ -> let y :: x :: stack' = stack in
-              ((match i with ADD -> (+) | _ -> ( * )) x y :: stack', 
-               st, 
+              ((match i with 
+              | ADD -> ( + )
+              | SUB -> ( - ) 
+              | MUL -> ( * ) 
+              | DIV -> ( / ) 
+              | MOD -> ( % ) 
+              | AND -> ( && ) 
+              | OR -> ( || )              
+              | EQUAL -> ( == )
+              | NOT_EQUaL -> ( != )
+              | LESS -> ( < )
+              | MORE -> ( > )
+              | MORE_EQUAL ( >= )
+              | LESS_EQUAL ( >= )
+              ) 
+              
+              
+              x y :: stack', st, 
                input, 
                output
               )
@@ -73,7 +100,18 @@ module Compile =
 	| Var x      -> [LD   x]
 	| Const n    -> [PUSH n]
 	| Add (x, y) -> (compile x) @ (compile y) @ [ADD]
-	| Mul (x, y) -> (compile x) @ (compile y) @ [MUL]
+	| Sub (x, y) -> (compile x) @ (compile y) @ [SUB]
+  | Mul (x, y) -> (compile x) @ (compile y) @ [MUL]
+  | Div (x, y) -> (compile x) @ (compile y) @ [DIV]
+  | Mod (x, y) -> (compile x) @ (compile y) @ [MOD]
+  | Or (x, y) -> (compile x) @ (compile y) @ [OR]
+  | And (x, y) -> (compile x) @ (compile y) @ [AND]
+  | Equal (x, y) -> (compile x) @ (compile y) @ [EQUAL]
+  | NotEqual (x, y) -> (compile x) @ (compile y) @ [NOT_EQUAL]
+  | Less (x, y) -> (compile x) @ (compile y) @ [LESS]
+  | More (x, y) -> (compile x) @ (compile y) @ [MORE]
+  | MoreEqual (x, y) -> (compile x) @ (compile y) @ [MORE_EQUAL]
+  | LessEqual (x, y) -> (compile x) @ (compile y) @ [LESS_EQUAL]
 
       end
 

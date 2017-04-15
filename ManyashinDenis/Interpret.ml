@@ -12,7 +12,18 @@ module Expr =
       | Var   x     -> st x
       | Const z     -> z
       | Add  (x, y) -> eval' x + eval' y
+      | Sub  (x, y) -> eval' x - eval' y
       | Mul  (x, y) -> eval' x * eval' y
+      | Div  (x, y) -> eval' x / eval' y
+      | Mod  (x, y) -> eval' x mod eval' y
+      | Or   (x,y) -> eval' x || eval' x  then 1 else 0
+      | And   (x,y) -> eval' x && eval' x then 1 else 0
+      | Equal   (x,y) -> eval' x == eval' x  then 1 else 0
+      | NotEqual   (x,y) -> eval' x != eval' x  then 1 else 0
+      | Less   (x,y) -> eval' x < eval' x  then 1 else 0
+      | More   (x,y) -> eval' x > eval' x  then 1 else 0
+      | MoreEqual   (x,y) -> eval' x <= eval' x  then 1 else 0
+      | LessEqual   (x,y) -> eval' x >= eval' x  then 1 else 0
 
   end
 
