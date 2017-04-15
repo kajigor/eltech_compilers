@@ -9,13 +9,21 @@ module Expr =
     let rec eval expr st = 
       let eval' e = eval e st in
       match expr with
-      | Var   x       -> st x
-      | Const z       -> z
-      | Add  (x, y)   -> eval' x + eval' y
-      | Mul  (x, y)   -> eval' x * eval' y
-      | Or (x, y)     -> if ((eval' x) = 0) && ((eval' y) = 0) then 0 else 1
-      | And (x, y)    -> if ((eval' x) = 0) || ((eval' y) = 0) then 0 else 1
-      | Equal (x, y)  -> if (eval' x) = (eval' y) then 1 else 0
+      | Var   x           -> st x
+      | Const z           -> z
+      | Add  (x, y)       -> eval' x + eval' y
+      | Sub  (x, y)       -> eval' x - eval' y
+      | Mul  (x, y)       -> eval' x * eval' y
+      | Div  (x, y)       -> eval' x / eval' y
+      | Rem  (x, y)       -> eval' x mod eval' y
+      | Or (x, y)         -> if ((eval' x) == 0) && ((eval' y) == 0) then 0 else 1
+      | And (x, y)        -> if ((eval' x) == 0) || ((eval' y) == 0) then 0 else 1
+      | Equal (x, y)      -> if (eval' x) == (eval' y) then 1 else 0
+      | NotEqual (x, y)   -> if (eval' x) != (eval' y) then 1 else 0
+      | Less (x, y)       -> if (eval' x) < (eval' y) then 1 else 0
+      | More (x, y)       -> if (eval' x) > (eval' y) then 1 else 0
+      | LessEqual (x, y)  -> if (eval' x) <= (eval' y) then 1 else 0
+      | MoreEqual (x, y)  -> if (eval' x) >= (eval' y) then 1 else 0
 
   end
 
