@@ -22,15 +22,21 @@ type instr =
 | Sub  of opnd * opnd
 | Mul  of opnd * opnd
 | Div  of opnd * opnd
-| Mod  of opnd * opnd
-| Or   of opnd * opnd
+| Cltd
 | Mov  of opnd * opnd
 | Push of opnd
 | Pop  of opnd
 | Call of string
 | Ret
+| Or   of opnd * opnd
+| And   of opnd * opnd
 | Cmd  of opnd * opnd
-| SET of 
+| SetNE of string
+| SetE of string
+| SetL  of string
+| SetG  of string
+| SetLE of string
+| SetGE of string
 
 let to_string buf code =      
   let instr =
@@ -42,12 +48,25 @@ let to_string buf code =
     in
     function
       | Add (x, y) -> Printf.sprintf "addl\t%s,%s"  (opnd x) (opnd y)
+      | Sub (x, y)    -> Printf.sprintf "subl\t%s,%s"  (opnd x) (opnd y)
       | Mul (x, y) -> Printf.sprintf "imull\t%s,%s" (opnd x) (opnd y)
+      | Div  x        -> Printf.sprintf "idiv\t%s"     (opnd x)
+      | Cltd          -> "cltd"
       | Mov (x, y) -> Printf.sprintf "movl\t%s,%s"  (opnd x) (opnd y)
       | Push x     -> Printf.sprintf "pushl\t%s"    (opnd x)
       | Pop  x     -> Printf.sprintf "popl\t%s"     (opnd x)
       | Call x     -> Printf.sprintf "call\t%s"      x
-      | Ret        -> "ret" 
+      | Ret        -> "ret"
+      | Or (x, y)  -> Printf.sprintf "orl\t%s,%s"   (opnd x) (opnd y)
+      | And (x, y) -> Printf.sprintf "andl\t%s,%s"  (opnd x) (opnd y)
+      | Cmp (x, y)    -> Printf.sprintf "cmpl\t%s,%s"  (opnd x) (opnd y)
+      | SetNE x       -> Printf.sprintf "setne\t%s"    x
+      | SetE x        -> Printf.sprintf "sete\t%s"     x
+      | SetL x        -> Printf.sprintf "setl\t%s"     x
+      | SetG x        -> Printf.sprintf "setg\t%s"     x
+      | SetLE x       -> Printf.sprintf "setle\t%s"    x
+      | SetGE x       -> Printf.sprintf "setge\t%s"    x
+      
   in
   let out s = 
     Buffer.add_string buf "\t"; 
@@ -104,15 +123,50 @@ let rec sint env prg sstack =
             env, [Push eax; Call "lwrite"; Pop edx], [] 
         | _ ->
             let x::(y::_ as sstack') = sstack in
+                    let andcode = [Mov (y, edx); And (y, edx);               (*compare y with self*)
+                       Mov (L 0, edx); SetNE dl;                    (*put result in edx*)
+                       Mov (x, eax); And (x, eax);               (*compare x with self*)
+                       Mov (L 0, eax); SetNE al;                    (*put result in eax*)
+                       And (eax, edx); Mov (L 0, edx); SetNE dl; (*compare eax with edx and put result in edx*)
+                       Mov (edx, y)] in                             (*put result to y*)
             (fun op ->
               match x, y with
-              | S _, S _ -> env, [Mov (y, edx); op x edx; Mov (edx, y)], sstack'
-              | _        -> env, [op x y], sstack'   
-            )
-              (match i with 
-	      | MUL -> fun x y -> Mul (x, y)
-	      | ADD -> fun x y -> Add (x, y)
-              )
+              | S _, S _ -> 
+                let opn arr = env, [Mov (y, edx)] @ arr @ [Mov (edx, y)], sstack' in
+                let logic set = opn [Cmp(x, edx); Mov (L 0, edx); set] in
+                (match i with
+                  | MUL         -> opn [Mul(x, edx)]
+                  | DIV         -> env, [Mov (y, eax); Cltd; Div x; Mov (eax, y)], sstack'
+                  | REM         -> env, [Mov (y, eax); Cltd; Div x; Mov (edx, y)], sstack'
+                  | ADD         -> opn [Add(x, edx)]
+                  | SUB         -> opn [Sub(x, edx)]
+                  | OR          -> opn [Or(x, edx); Mov (L 0, edx); SetNE dl]
+                  | AND         -> env, andcode, sstack'
+                  | EQUAL       -> logic (SetE dl)
+                  | NOTEQUAL    -> logic (SetNE dl)
+                  | LESS        -> logic (SetL dl)
+                  | MORE        -> logic (SetG dl)
+                  | LESSEQUAL   -> logic (SetLE dl)
+                  | MOREEQUAL   -> logic (SetGE dl)
+                )
+              | _        ->           (*if one or both operands in register*)
+            let opn codearr = env, codearr, sstack' in
+            let logic set = opn [Cmp(x, y); Mov (L 0, edx); set; Mov (edx, y)] in
+            (match i with
+            | MUL         -> opn [Mul(x, y)]
+            | DIV         -> env, [Mov (y, eax); Cltd; Div x; Mov (eax, y)], sstack'
+            | MOD         -> env, [Mov (y, eax); Cltd; Div x; Mov (edx, y)], sstack'
+            | ADD         -> opn [Add(x, y)]
+            | SUB         -> opn [Sub(x, y)]
+            | OR          -> opn [Or(x, y); Mov (L 0, edx); SetNE dl; Mov (edx, y)]
+            | AND         -> env, andcode, sstack'
+            | EQUAL       -> logic (SetE dl)
+            | NOTEQUAL    -> logic (SetNE dl)
+            | LESS        -> logic (SetL dl)
+            | MORE        -> logic (SetG dl)
+            | LESSEQUAL   -> logic (SetLE dl)
+            | MOREEQUAL   -> logic (SetGE dl)
+            )   
       in
       let env, code', sstack'' = sint env prg' sstack' in
       env, code @ code', sstack''

@@ -16,14 +16,14 @@ module Expr =
       | Mul  (x, y) -> eval' x * eval' y
       | Div  (x, y) -> eval' x / eval' y
       | Mod  (x, y) -> eval' x mod eval' y
-      | Or   (x,y) -> eval' x || eval' x  then 1 else 0
-      | And   (x,y) -> eval' x && eval' x then 1 else 0
-      | Equal   (x,y) -> eval' x == eval' x  then 1 else 0
-      | NotEqual   (x,y) -> eval' x != eval' x  then 1 else 0
-      | Less   (x,y) -> eval' x < eval' x  then 1 else 0
-      | More   (x,y) -> eval' x > eval' x  then 1 else 0
-      | MoreEqual   (x,y) -> eval' x <= eval' x  then 1 else 0
-      | LessEqual   (x,y) -> eval' x >= eval' x  then 1 else 0
+      | Or   (x,y)  -> if ((eval' x) == 0) && ((eval' x) == 0) then 0 else 1
+      | And   (x,y) -> if ((eval' x) == 0) || ((eval' x) == 0) then 0 else 1
+      | Equal (x,y) -> if (eval' x) == (eval' y)  then 1 else 0
+      | NotEqual (x,y) -> if (eval' x) != (eval' y)  then 1 else 0
+      | Less   (x,y)   -> if (eval' x) < (eval' y)  then 1 else 0
+      | More   (x,y)   -> if (eval' x) > (eval' y)  then 1 else 0
+      | MoreEqual(x,y) -> if (eval' x) <= (eval' y)  then 1 else 0
+      | LessEqual(x,y) -> if (eval' x) >= (eval' y)  then 1 else 0
 
   end
 

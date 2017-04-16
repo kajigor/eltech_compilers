@@ -58,7 +58,7 @@ module Interpret =
               | SUB -> ( - ) 
               | MUL -> ( * ) 
               | DIV -> ( / ) 
-              | MOD -> ( % ) 
+              | MOD -> ( mod ) 
               | AND -> ( && ) 
               | OR -> ( || )              
               | EQUAL -> ( == )
@@ -66,7 +66,7 @@ module Interpret =
               | LESS -> ( < )
               | MORE -> ( > )
               | MORE_EQUAL ( >= )
-              | LESS_EQUAL ( >= )
+              | LESS_EQUAL ( <= )
               ) 
               
               
