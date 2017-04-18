@@ -1,30 +1,3 @@
-<<<<<<< HEAD
-MKDIR ?= mkdir -vp
-CP    ?= cp
-
-OB=ocamlbuild -cflag -g -no-hygiene -use-ocamlfind -plugin-tag "package(str)" -classic-display
-ifdef OBV
-OB += -verbose 6
-endif
-
-BYTE_TARGETS=src/rc.byte 
-NATIVE_TARGETS=src/rc.native
-
-.PHONY: all clean runtime
-
-.DEFAULT_GOAL: all
-
-all: main runtime
-
-runtime:
-	cd runtime && make all && cd ..
-
-main:
-	$(OB) -Is src $(BYTE_TARGETS) $(NATIVE_TARGETS)
-
-clean: 
-	cd runtime && make clean && cd .. && $(RM) -r _build *.log  *.native *.byte
-=======
 all: Driver.cmo
 	ocamlc -rectypes -o compiler -I `ocamlfind -query GT` -I `ocamlfind -query ostap` -I `ocamlfind -query re.str` re.cma re_emacs.cma re_str.cma GT.cma ostap.cmo Language.cmo Interpret.cmo StackMachine.cmo X86.cmo Driver.cmo
 
@@ -45,4 +18,3 @@ Driver.cmo: Driver.ml StackMachine.cmo X86.cmo Interpret.cmo
 
 clean:
 	rm -Rf *~ *.cmo compiler
->>>>>>> HW2
