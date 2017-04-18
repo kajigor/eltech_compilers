@@ -10,12 +10,23 @@ let [|eax; ebx; ecx; esi; edi; edx; esp; ebp|] = Array.mapi (fun i _ -> R i) reg
 
 type instr =
 | Add  of opnd * opnd
+| Sub of opnd * opnd
+| Div of opnd
 | Mul  of opnd * opnd
 | Mov  of opnd * opnd
 | Push of opnd
 | Pop  of opnd
 | Call of string
 | Ret
+| AndBin of opnd *opnd
+| OrBin  of opnd *opnd
+| Cmp  of opnd *opnd
+| Setg of string
+| Setl  of string
+| Sete    of string 
+| Setne  of string
+| Setge of string
+| Setle of string
 
 let to_string buf code =      
   let instr =
@@ -33,6 +44,17 @@ let to_string buf code =
       | Pop  x     -> Printf.sprintf "popl\t%s"     (opnd x)
       | Call x     -> Printf.sprintf "call\t%s"      x
       | Ret        -> "ret" 
+	  | Sub (x, y)    -> Printf.sprintf "subl\t%s,%s"  (opnd x) (opnd y) 
+	  | Div  x        -> Printf.sprintf "idiv\t%s"     (opnd x) 
+	  | AndBin (x, y) -> Printf.sprintf "andl\t%s,%s"  (opnd x) (opnd y) 
+	  | OrBin (x, y)  -> Printf.sprintf "orl\t%s,%s"   (opnd x) (opnd y)
+	  | Cmp (x, y)    -> Printf.sprintf "cmpl\t%s,%s"  (opnd x) (opnd y) 
+	  | Setg x        -> Printf.sprintf "setg\t%s"     x 
+	  | Setl x        -> Printf.sprintf "setl\t%s"     x 
+	  | Sete x        -> Printf.sprintf "sete\t%s"     x
+	  | Setne x       -> Printf.sprintf "setne\t%s"    x 
+	  | Setge x       -> Printf.sprintf "setge\t%s"    x 
+	  | Setle x       -> Printf.sprintf "setle\t%s"    x 
   in
   let out s = 
     Buffer.add_string buf "\t"; 
@@ -82,15 +104,34 @@ let rec sint env prg sstack =
             env, [Push eax; Call "lwrite"; Pop edx], [] 
         | _ ->
             let x::(y::_ as sstack') = sstack in
-            (fun op ->
-              match x, y with
-              | S _, S _ -> env, [Mov (y, edx); op x edx; Mov (edx, y)], sstack'
-              | _        -> env, [op x y], sstack'   
-            )
               (match i with 
 	      | MUL -> fun x y -> Mul (x, y)
 	      | ADD -> fun x y -> Add (x, y)
-              )
+		  | DIV -> env, 
+		          [Mov (y, eax); 
+		           Cltd; 
+				   Div x;
+				   Mov (eax, y)], sstack'
+          | SUB -> short [Sub(x, edx)]
+		  | MOD -> env, 
+		          [Mov (y, eax); 
+				   Cltd; 
+				   Div x; 
+				   Mov (edx, y)], sstack'
+		  | OR -> short [OrBin(x, edx); Mov (L 0, edx); Setne dl]
+          | AND -> env, [Mov (y, edx); AndBin (y, edx);              
+                       Mov (L 0, edx); Setne dl;
+					   Mov (x, eax); AndBin (x, eax);
+                       Mov (L 0, eax); Setne al;
+                       AndBin (eax, edx); Mov (L 0, edx); Setne dl; 
+                       Mov (edx, y)] 
+           | EQUALS -> shorteq (Sete dl)   
+		   | NOT_EQUALS -> shorteq (Setne dl)
+		   | GREATER -> shorteq (Setg dl)
+		   | LESS -> shorteq (Setl dl)
+		   | GREATER_EQUALS -> shorteq (Setge dl)
+		   | LESS_EQUALS -> shorteq (Setle dl)
+		   )
       in
       let env, code', sstack'' = sint env prg' sstack' in
       env, code @ code', sstack''

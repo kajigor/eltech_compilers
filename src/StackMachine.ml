@@ -10,7 +10,17 @@ module Instr =
       | ST   of string
       | ADD  
       | MUL
-
+	  | SUB
+	  | DIV
+	  | MOD
+	  | AND
+	  | OR
+	  | EQUALS
+	  | NOT_EQUALS
+	  | GREATER
+	  | LESS
+	  | GREATER_EQUALS
+	  | LESS_EQUALS
   end
 
 module Program =
@@ -42,7 +52,37 @@ module Interpret =
 	    | ST   x -> let z :: stack' = stack in
               (stack', update st x z, input, output)
 	    | _ -> let y :: x :: stack' = stack in
-              ((match i with ADD -> (+) | _ -> ( * )) x y :: stack', 
+              ((match i with 
+			     | ADD -> ( + )
+                 | MUL -> ( * )
+	             | SUB -> ( - )
+	             | DIV -> ( / )
+	             | MOD -> ( mod )
+	             | AND -> ( fun a b -> if (a == 1) && (b == 1) 
+				                           then 1 
+									   else 0)
+	             | OR -> ( fun a b -> if (a == 0) && (b == 0) 
+				                           then 0 
+									   else 1)
+	             | EQUALS -> ( fun a b -> if (a == b) 
+				                           then 1 
+									   else 0)
+	             | NOT_EQUALS -> ( fun a b -> if (a == b) 
+				                           then 0
+									   else 1)
+	             | GREATER -> ( fun a b -> if (a > b) 
+				                           then 1 
+									   else 0)
+	             | LESS -> ( fun a b -> if (a < b) 
+				                           then 1 
+									   else 0)
+	             | GREATER_EQUALS -> ( fun a b -> if (a < b) 
+				                           then 0 
+									   else 1)
+	             | LESS_EQUALS -> ( fun a b -> if (a > b) 
+				                           then 0 
+									   else 1)
+			  ) x y :: stack', 
                st, 
                input, 
                output
@@ -72,9 +112,19 @@ module Compile =
 	let rec compile = function 
 	| Var x      -> [LD   x]
 	| Const n    -> [PUSH n]
-	| Add (x, y) -> (compile x) @ (compile y) @ [ADD]
-	| Mul (x, y) -> (compile x) @ (compile y) @ [MUL]
-
+	| Add (x, y) -> twoargs ADD x y
+	| Mul (x, y) -> twoargs MUL x y
+	| Sub  (x, y) -> twoargs SUB x y
+	| Div  (x, y) -> twoargs DIV x y
+	| Mod  (x, y) -> twoargs MOD x y
+	| And  (x, y) -> twoargs AND x y
+	| Or   (x, y) -> twoargs OR x y
+    | Equals (x, y) -> twoargs EQUALS x y
+	| NotEquals (x, y) -> twoargs NOT_EQUALS x y
+    | Greater  (x, y) -> twoargs GREATER x y
+    | Less  (x, y) -> twoargs LESS x y
+    | GreaterEquals  (x, y) -> twoargs GREATER_EQUALS x y
+    | LessEquals  (x, y) -> twoargs LESS_EQUALS x y
       end
 
     module Stmt =

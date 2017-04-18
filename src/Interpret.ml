@@ -13,6 +13,34 @@ module Expr =
       | Const z     -> z
       | Add  (x, y) -> eval' x + eval' y
       | Mul  (x, y) -> eval' x * eval' y
+	  | Sub  (x, y) -> eval' x - eval' y
+	  | Div  (x, y) -> eval' x / eval' y
+	  | Mod  (x, y) -> eval' mod eval' y
+	  | And  (x, y) -> if( (eval' x) == 1 && (eval' y) == 1) 
+	                       then 1 
+					   else 0
+	  | Or   (x, y) -> if( (eval' x)) == 0 && (eval' y) == 0)
+                           then 0
+                       else 1
+      | Equals (x, y) -> if( (eval' x) == (eval' y))
+	                       then 1
+					    else 0
+	  | NotEquals (x, y) -> if( (eval' x) == (eval' y))
+	                          then 0
+					       else 1
+      | Greater  (x, y) -> if( (eval' x) > (eval' y))
+	                          then 1
+					       else 0
+      | Less  (x, y) -> if( (eval' x) < (eval' y))
+	                          then 1
+					       else 0
+      | GreaterEquals  (x, y) -> if( (eval' x) < (eval' y))
+	                          then 0
+					       else 1
+      | LessEquals  (x, y) -> if( (eval' x) > (eval' y))
+	                          then 0
+					       else 1
+
 
   end
 
