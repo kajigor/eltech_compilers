@@ -1,23 +1,58 @@
 (* AST for expressions *)
+open Ostap.Util
 module Expr =
   struct
 
     type t =
-    | Var   of string
-    | Const of int
-    | Add   of t * t
-    | Mul   of t * t 
+    | Var   	     of string
+    | Const 	     of int
+    | Add   	     of t * t
+    | Mul    	     of t * t  (**)
+    | Disjunction  of t * t
+    | Conjunction  of t * t
+    | Equal 	     of t * t
+    | Inequality   of t * t
+    | Less 	   	   of t * t
+    | Greater 	   of t * t
+    | LessEqual    of t * t
+    | GreaterEqual of t * t
+    | Subtraction  of t * t
+    | Division	   of t * t
+    | Dividend     of t * t
 
-    ostap (
-      parse: x:mull "+" y:parse {Add (x,y)} | mull;
-      mull : x:prim "*" y:mull  {Mul (x,y)} | prim; 
-      prim : 
-        n:DECIMAL       {Const n}  
-      | e:IDENT         {Var e}
-      | -"(" parse -")" 
-    )
 
-  end
+
+  let rec parse s =                                                                                          
+       expr id
+ 	    [|     
+         `Nona ,  [ostap ("||"), (fun x y -> Disjunction (x, y)); 
+                   ostap ("&&"), (fun x y -> Conjunction (x, y));];  
+                     
+        
+         
+         `Nona ,  [ostap ("=="), (fun x y -> Equal (x, y)); 
+                   ostap ("!="), (fun x y -> Inequality (x, y));
+                   ostap ("<="), (fun x y -> LessEqual (x, y));
+                   ostap (">="), (fun x y -> GreaterEqual (x, y));
+                   ostap ("<"), (fun x y -> Less (x, y));
+                   ostap (">"), (fun x y -> Greater (x, y))];
+ 
+         `Lefta , [ostap ("+"), (fun x y -> Add (x, y));
+                   ostap ("-"), (fun x y -> Subtraction (x, y))]; 
+ 
+         `Lefta , [ostap ("*"), (fun x y -> Mul (x, y));
+                   ostap ("/"), (fun x y -> Division (x, y));
+                   ostap ("%"), (fun x y -> Dividend (x, y))]
+       |]                                                                                                  
+       expr' s                                                                                                   
+       and 
+       ostap (
+         expr':
+           n:DECIMAL                 {Const n}  
+           | e:IDENT                 {Var e}
+           | -"(" parse -")") 
+ 
+   end
 
 (* AST statements/commands *)
 module Stmt =
