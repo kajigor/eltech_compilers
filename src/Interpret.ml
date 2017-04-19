@@ -13,6 +13,17 @@ module Expr =
       | Const z     -> z
       | Add  (x, y) -> eval' x + eval' y
       | Mul  (x, y) -> eval' x * eval' y
+	| Or	(x, y) -> if ((eval' x) == 0) && ((eval' y) == 0 ) then 0 else 1
+	| And	(x, y) -> if ((eval' x) == 1) && ((eval' y) == 1 ) then 1 else 0
+	| Eql	(x, y) -> if ((eval' x) == (eval' y)) then 1 else 0
+	| NEql	(x, y) -> if ((eval' x) == (eval' y)) then 0 else 1
+	| LEql	(x, y) -> if ((eval' x) <= (eval' y)) then 1 else 0
+	| MEql	(x, y) -> if ((eval' x) >= (eval' y)) then 1 else 0
+	| More	(x, y) -> if ((eval' x) > (eval' y)) then 1 else 0
+	| Less	(x, y) -> if ((eval' x) < (eval' y)) then 1 else 0
+	| Sub	(x, y) -> eval' x - eval' y
+	| Div	(x, y) -> eval' x / eval' y
+	| Mod	(x, y) -> eval' x % eval' y
 
   end
 

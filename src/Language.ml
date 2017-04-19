@@ -6,7 +6,18 @@ module Expr =
     | Var   of string
     | Const of int
     | Add   of t * t
-    | Mul   of t * t 
+    | Mul   of t * t
+    | Or	of t * t
+    | And	of t * t
+    | Eql	of t * t
+    | NEql	of t * t
+    | LEql	of t * t
+    | MEql	of t * t
+    | More	of t * t
+    | Less	of t * t
+    | Sub	of t * t
+    | Div	of t * t
+    | Mod	of t * t
 
     ostap (
       parse: x:mull "+" y:parse {Add (x,y)} | mull;

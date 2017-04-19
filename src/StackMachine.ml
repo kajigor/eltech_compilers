@@ -10,6 +10,17 @@ module Instr =
       | ST   of string
       | ADD  
       | MUL
+      | OR
+      | AND
+      | EQL
+      | NEQL
+      | LEQL
+      | MEQL
+      | MORE
+      | LESS
+      | SUB
+      | DIV
+      | MOD
 
   end
 
@@ -74,6 +85,17 @@ module Compile =
 	| Const n    -> [PUSH n]
 	| Add (x, y) -> (compile x) @ (compile y) @ [ADD]
 	| Mul (x, y) -> (compile x) @ (compile y) @ [MUL]
+	| Or	(x, y) -> (compile x) @ (compile y) @ [OR]
+	| And	(x, y) -> (compile x) @ (compile y) @ [AND]
+	| Eql	(x, y) -> (compile x) @ (compile y) @ [EQL]
+	| NEql	(x, y) -> (compile x) @ (compile y) @ [NEQL]
+	| LEql	(x, y) -> (compile x) @ (compile y) @ [LQEL]
+	| MEql	(x, y) -> (compile x) @ (compile y) @ [MEQL]
+	| More	(x, y) -> (compile x) @ (compile y) @ [MORE]
+	| Less	(x, y) -> (compile x) @ (compile y) @ [LESS]
+	| Sub	(x, y) -> (compile x) @ (compile y) @ [SUB]
+	| Div	(x, y) -> (compile x) @ (compile y) @ [DIV]
+	| Mod	(x, y) -> (compile x) @ (compile y) @ [MOD]
 
       end
 
