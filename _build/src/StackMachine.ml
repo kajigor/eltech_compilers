@@ -92,20 +92,6 @@ module Compile =
   | Var x      -> [LD   x]
   | Const n    -> [PUSH n]
   | Binop (o, x, y) -> (compile x) @ (compile y) @ [BINOP o]
-  (*Add (x, y) -> (compile x) @ (compile y) @ [ADD]
-  | Mul (x, y) -> (compile x) @ (compile y) @ [MUL]
-  | Disjunction (x, y) -> (compile x) @ (compile y) @ [DISJUNCTION]
-  | Conjunction (x, y) -> (compile x) @ (compile y) @ [CONJUCTION]
-  | Equal (x, y) -> (compile x) @ (compile y) @ [EQUAL]
-  | Inequality (x, y) -> (compile x) @ (compile y) @ [INEQUALITY]
-  | Less (x, y) -> (compile x) @ (compile y) @ [LESS]
-  | Greater (x, y) -> (compile x) @ (compile y) @ [GREATER]
-  | LessEqual (x, y) -> (compile x) @ (compile y) @ [LESSEQUAL]
-  | GreaterEqual (x, y) -> (compile x) @ (compile y) @ [GREATEREQUAL]
-  | Subtraction (x, y) -> (compile x) @ (compile y) @ [SUBTRACTION]
-  | Division (x, y) -> (compile x) @ (compile y) @ [DIVISION]
-  | Dividend (x, y) -> (compile x) @ (compile y) @ [DIVIDED]*)
-
       end
 
     module Stmt =

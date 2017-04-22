@@ -26,22 +26,6 @@ module Expr =
                                 |">"  -> if (eval' x) > (eval' y) then 1 else 0
                                 |"<=" -> if (eval' x) <= (eval' y) then 1 else 0
                                 |">=" -> if (eval' x) >= (eval' y) then 1 else 0)
-                              
-                              (*| Mul  (x, y)            -> eval' x * eval' y
-                              | Division  (x, y)       -> if   eval' y == 0 then 0
-                                                          else eval' x / eval' y
-                              | Dividend  (x, y)       -> if   eval' y == 0 then 0
-                                                          else eval' x mod eval' y
-                              | Subtraction  (x, y)    -> eval' x - eval' y
-                              | Conjunction (x, y)     -> if ((eval' x) == 0) && ((eval' y) == 0) then 0 else 1
-                              | Disjunction (x, y)     -> if ((eval' x) == 0) || ((eval' y) == 0) then 0 else 1
-                              | Equal (x, y)           -> if (eval' x) == (eval' y) then 1 else 0
-                              | Inequality (x, y)      -> if (eval' x) != (eval' y) then 1 else 0
-                              | Less (x, y)            -> if (eval' x) < (eval' y) then 1 else 0
-                              | Greater (x, y)         -> if (eval' x) > (eval' y) then 1 else 0
-                              | LessEqual (x, y)       -> if (eval' x) <= (eval' y) then 1 else 0
-                              | GreaterEqual (x, y)    -> if (eval' x) >= (eval' y) then 1 else 0*)
-
   end
 
  
