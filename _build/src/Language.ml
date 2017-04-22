@@ -6,48 +6,47 @@ module Expr =
     type t =
     | Var   	     of string
     | Const 	     of int
-    | Add   	     of t * t
-    | Mul    	     of t * t  (**)
-    | Disjunction  of t * t
-    | Conjunction  of t * t
-    | Equal 	     of t * t
-    | Inequality   of t * t
-    | Less 	   	   of t * t
-    | Greater 	   of t * t
-    | LessEqual    of t * t
-    | GreaterEqual of t * t
-    | Subtraction  of t * t
-    | Division	   of t * t
-    | Dividend     of t * t
+    | Binop   	     of string * t * t
 
+(*
 
+  X Y Z  возвращает кортеж 
+  X*     возвращает список
+  ("1" "2") *
+  x:"1" {int_of_string (Token.repr x)}
+  x:("0" | "1" | "2")+ {List.fold_left (fun n d -> n * 10 + int_of_string n) 0 x}
 
-  let rec parse s =                                                                                          
-       expr id
- 	    [|     
-         `Nona ,  [ostap ("||"), (fun x y -> Disjunction (x, y)); 
-                   ostap ("&&"), (fun x y -> Conjunction (x, y));];  
-                     
-        
-         
-         `Nona ,  [ostap ("=="), (fun x y -> Equal (x, y)); 
-                   ostap ("!="), (fun x y -> Inequality (x, y));
-                   ostap ("<="), (fun x y -> LessEqual (x, y));
-                   ostap (">="), (fun x y -> GreaterEqual (x, y));
-                   ostap ("<"), (fun x y -> Less (x, y));
-                   ostap (">"), (fun x y -> Greater (x, y))];
- 
-         `Lefta , [ostap ("+"), (fun x y -> Add (x, y));
-                   ostap ("-"), (fun x y -> Subtraction (x, y))]; 
- 
-         `Lefta , [ostap ("*"), (fun x y -> Mul (x, y));
-                   ostap ("/"), (fun x y -> Division (x, y));
-                   ostap ("%"), (fun x y -> Dividend (x, y))]
-       |]                                                                                                  
-       expr' s                                                                                                   
-       and 
+  let rec fold_left f acc list =
+    match list with
+    | []   -> acc
+    | h::t -> fold_left f (f acc h) t
+
+    Свертка списка
+    fold_right ( * ) [x1; x2; x3; x4; ...; xk] y =  x1 * ... * (xk-1 * (xk * y)) ...)
+    fold_left ( * ) y [x1; x2; x3; x4; ...; xk] = def =
+    (..((((y * x1) * x2) * x3) * x4) ... xk)
+*)
+
+    
        ostap (
-         expr':
+       	 parse: expr0;
+       	 expr0: h:expr1 t:(-"!!" expr1)* {
+       	  List.fold_left(fun e op ->Binop( "!!" , e, op)) h t};
+
+       	 expr1: h:expr2 t:(-"&&" expr2)* {
+       	  List.fold_left(fun e op ->Binop( "&&" , e, op)) h t};
+
+    	 	 expr2: h:expr3 t:(("==" | "!=" | "<=" | "<" | ">=" | ">") expr3)* {
+           	 List.fold_left (fun e (op, y) -> Binop(Ostap.Matcher.Token.repr op, e, y)) h t};
+
+       	 expr3: h:expr4 t:(("+" | "-") expr4)* {
+       	  List.fold_left (fun e (op, y) -> Binop(Ostap.Matcher.Token.repr op, e, y)) h t};
+
+    	 	 expr4: h:prim t:(("*" | "/" | "%") prim)* {
+           	  List.fold_left (fun e (op, y) -> Binop(Ostap.Matcher.Token.repr op, e, y)) h t};
+
+
+         prim:
            n:DECIMAL                 {Const n}  
            | e:IDENT                 {Var e}
            | -"(" parse -")") 

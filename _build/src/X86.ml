@@ -12,6 +12,7 @@ type instr =
 | Add  of opnd * opnd
 | Mul  of opnd * opnd
 | Mov  of opnd * opnd
+| Disjunction of opnd * opnd
 | Push of opnd
 | Pop  of opnd
 | Call of string
@@ -29,6 +30,7 @@ let to_string buf code =
       | Add (x, y) -> Printf.sprintf "addl\t%s,%s"  (opnd x) (opnd y)
       | Mul (x, y) -> Printf.sprintf "imull\t%s,%s" (opnd x) (opnd y)
       | Mov (x, y) -> Printf.sprintf "movl\t%s,%s"  (opnd x) (opnd y)
+      | Disjunction (x, y) -> Printf.sprintf "movl\t%s,%s"  (opnd x) (opnd y)
       | Push x     -> Printf.sprintf "pushl\t%s"    (opnd x)
       | Pop  x     -> Printf.sprintf "popl\t%s"     (opnd x)
       | Call x     -> Printf.sprintf "call\t%s"      x
@@ -80,17 +82,20 @@ let rec sint env prg sstack =
             env, [Call "lread"], [eax]
         | WRITE ->
             env, [Push eax; Call "lwrite"; Pop edx], [] 
-        | _ ->
+       (* | _ ->
             let x::(y::_ as sstack') = sstack in
             (fun op ->
               match x, y with
               | S _, S _ -> env, [Mov (y, edx); op x edx; Mov (edx, y)], sstack'
               | _        -> env, [op x y], sstack'   
             )
-              (match i with 
+             (match i with 
+             _ -> env, [op x y], sstack' (*
 	      | MUL -> fun x y -> Mul (x, y)
 	      | ADD -> fun x y -> Add (x, y)
-              )
+        | DISJUNCTION -> -> fun x y -> Disjunction (x, y)
+          *)    )*)
+
       in
       let env, code', sstack'' = sint env prg' sstack' in
       env, code @ code', sstack''
