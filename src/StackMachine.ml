@@ -43,7 +43,7 @@ module Interpret =
               (stack', update st x z, input, output)
 	    | BINOP op ->
 		  let y::x::stack' = stack in
-                  (state, (apply op x y)::stack', input, output)
+                  ((apply op x y)::stack', st, input, output)
         )
       in
       let (_, _, _, output) = 
