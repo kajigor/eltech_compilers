@@ -1,0 +1,60 @@
+fun cons (X, XS)
+begin
+  return {X, XS}
+end
+
+fun nil ()
+begin
+  return {}
+end
+
+fun length (L)
+begin
+  if arrlen (L) == 0 
+     then return 0
+     else return 1 + arrlen (L[1])
+  fi
+end
+
+fun append (A, B)
+begin
+  if arrlen (A) == 0
+     then return B
+     else return {A[0], append (A[1], B)}
+  fi
+end
+
+fun reverse (L)
+begin
+  if arrlen (L) == 0
+     then return {}
+     else return append (reverse (L[1]), {L[0], {}})
+  fi
+end
+
+fun readList ()
+begin
+  read (n);
+  L := nil ();
+  while n >= 0 do
+    L := cons ([read()], L);
+    n := n-1
+  od;
+  return L
+end
+
+fun printList (L)
+begin
+  if arrlen (L) == 0 
+     then return 0
+     else 
+       write (L[0][0]);
+       return printList (L[1])
+  fi  
+end
+
+L := readList ();
+printList (L);
+printList (reverse (L))
+
+

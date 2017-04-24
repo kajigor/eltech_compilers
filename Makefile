@@ -1,11 +1,25 @@
-all: Driver.cmo
-	ocamlc -rectypes -o Driver -I `ocamlfind -query GT` GT.cma Expr.cmo Driver.cmo
+MKDIR ?= mkdir -vp
+CP    ?= cp
 
-Expr.cmo: Expr.ml
-	ocamlc -rectypes -c -pp "camlp5o -I `ocamlfind -query GT.syntax.all` pa_gt.cmo -L `ocamlfind -query GT.syntax.all`" -I `ocamlfind -query GT` GT.cma $<
+OB=ocamlbuild -cflag -g -no-hygiene -use-ocamlfind -plugin-tag "package(str)" -classic-display
+ifdef OBV
+OB += -verbose 6
+endif
 
-Driver.cmo: Expr.cmo Driver.ml
-	ocamlc -rectypes -c -pp "camlp5o -I `ocamlfind -query GT.syntax.all` pa_gt.cmo -L `ocamlfind -query GT.syntax.all`" -I `ocamlfind -query GT` GT.cma Driver.ml
+BYTE_TARGETS=src/rc.byte 
+NATIVE_TARGETS=src/rc.native
 
-clean:
-	rm -Rf *~ *.cmo Driver
+.PHONY: all clean runtime
+
+.DEFAULT_GOAL: all
+
+all: main runtime
+
+runtime:
+	cd runtime && make all && cd ..
+
+main:
+	$(OB) -Is src $(BYTE_TARGETS) $(NATIVE_TARGETS)
+
+clean: 
+	cd runtime && make clean && cd .. && $(RM) -r _build *.log  *.native *.byte
