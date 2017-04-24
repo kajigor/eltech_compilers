@@ -3,19 +3,34 @@ open Instr
 
 type opnd = R of int | S of int | L of int | M of string
 
-let regs  = [|"%eax"; "%ebx"; "%ecx"; "%esi"; "%edi"; "%edx"; "%esp"; "%ebp"|]
+let regs  = [|"%eax"; "%ebx"; "%ecx"; "%edx"; "%esi"; "%edi"; "%esp"; "%ebp"|]
 let nregs = Array.length regs - 3
 
-let [|eax; ebx; ecx; esi; edi; edx; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
+let [|eax; ebx; ecx; edx; esi; edi; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
 
 type instr =
 | Add  of opnd * opnd
 | Mul  of opnd * opnd
+| Sub  of opnd * opnd
+| Div  of opnd * opnd
+| Mod  of opnd * opnd
 | Mov  of opnd * opnd
+| Cmp  of opnd * opnd
+| Xor  of opnd * opnd
+| Or   of opnd * opnd
+| And  of opnd * opnd
 | Push of opnd
 | Pop  of opnd
-| Call of string
+| Cdq
+| Setl
+| Setle
+| Setg
+| Setge
+| Sete
+| Setne
+| Movzbl
 | Ret
+| Call of string
 
 let to_string buf code =      
   let instr =
@@ -26,13 +41,32 @@ let to_string buf code =
       | M s -> s  
     in
     function
-      | Add (x, y) -> Printf.sprintf "addl\t%s,%s"  (opnd x) (opnd y)
-      | Mul (x, y) -> Printf.sprintf "imull\t%s,%s" (opnd x) (opnd y)
-      | Mov (x, y) -> Printf.sprintf "movl\t%s,%s"  (opnd x) (opnd y)
-      | Push x     -> Printf.sprintf "pushl\t%s"    (opnd x)
-      | Pop  x     -> Printf.sprintf "popl\t%s"     (opnd x)
-      | Call x     -> Printf.sprintf "call\t%s"      x
-      | Ret        -> "ret" 
+      | Add (s1, s2) -> Printf.sprintf "\taddl\t%s,\t%s"  (opnd s1) (opnd s2)
+      | Mul (s1, s2) -> Printf.sprintf "\timull\t%s,\t%s" (opnd s1) (opnd s2)
+      | Sub (s1, s2) -> Printf.sprintf "\tsubl\t%s,\t%s"  (opnd s1) (opnd s2)
+      | Div (s1, s2) -> Printf.sprintf "\tidivl\t%s"      (opnd s1)
+
+      | Mov (s1, s2) -> Printf.sprintf "\tmovl\t%s,\t%s"  (opnd s1) (opnd s2)
+      | Cmp (s1, s2) -> Printf.sprintf "\tcmp\t%s,\t%s"   (opnd s1) (opnd s2)
+      | Push s       -> Printf.sprintf "\tpushl\t%s"      (opnd s )
+      | Pop  s       -> Printf.sprintf "\tpopl\t%s"       (opnd s )
+ 
+      | Xor (s1, s2) -> Printf.sprintf "\txorl\t%s,\t%s"  (opnd s1) (opnd s2)
+      | Or  (s1, s2) -> Printf.sprintf "\torl\t%s,\t%s"   (opnd s1) (opnd s2)
+      | And (s1, s2) -> Printf.sprintf "\tandl\t%s,\t%s"  (opnd s1) (opnd s2)
+
+      | Setl         -> "\tsetl\t%al"
+      | Setle        -> "\tsetle\t%al"
+      | Setg         -> "\tsetg\t%al"
+      | Setge        -> "\tsetge\t%al"
+      | Sete         -> "\tsete\t%al"
+      | Setne        -> "\tsetne\t%al"
+    
+                                          
+      | Movzbl       -> "\tmovzbl\t%al,\t%eax" 
+      | Cdq          -> "\tcdq"
+      | Ret          -> "\tret"
+      | Call p       -> Printf.sprintf "\tcall\t%s" p 
   in
   let out s = 
     Buffer.add_string buf "\t"; 
@@ -42,14 +76,24 @@ let to_string buf code =
   List.iter (fun i -> out @@ instr i) code
     
 module S = Set.Make (String)
-    
+
+let save_regs f =
+  [Push eax; Push ebx] @ f @ [Pop ebx; Pop eax] 
+
+let to_eax_ebx x y f =
+  save_regs @@ [Mov (x, eax); Mov (y, ebx)] @ (f eax ebx) @ [Mov (ebx, y)]
+   
+
+let compare x y cmp =
+  [Cmp (x, y); cmp; Movzbl]
+
 class env =
   object (this)
     val locals = S.empty
     val depth  = 0
 	
     method allocate = function
-      | []                          -> this, R 0
+      | []                          -> this, R 2
       | R i :: _ when i < nregs - 1 -> this, R (i+1)
       | S i :: _                    -> {< depth = max depth (i+1) >}, S (i+1)
       | _                           -> {< depth = max depth 1 >}, S 1 
@@ -72,25 +116,66 @@ let rec sint env prg sstack =
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
             env'', [Mov (M x, s)], s :: sstack
-	| ST x ->
+	    | ST x ->
             let env' = env#local x in
             let s :: sstack' = sstack in
             env', [Mov (s, M x)], sstack' 
         | READ  ->
             env, [Call "lread"], [eax]
         | WRITE ->
-            env, [Push eax; Call "lwrite"; Pop edx], [] 
-        | _ ->
+            env, [Push (R 2); Call "lwrite"; Pop (R 2)], [] 
+        | BINOP op ->
             let x::(y::_ as sstack') = sstack in
-            (fun op ->
-              match x, y with
-              | S _, S _ -> env, [Mov (y, edx); op x edx; Mov (edx, y)], sstack'
-              | _        -> env, [op x y], sstack'   
-            )
-              (match i with 
-	      | MUL -> fun x y -> Mul (x, y)
-	      | ADD -> fun x y -> Add (x, y)
-              )
+            env, (match op with
+                 | "+" ->
+                    to_eax_ebx x y @@ fun x y -> [Add (x, y); Mov (y, eax)]
+                 | "-" ->
+                    to_eax_ebx x y @@ fun x y -> [Sub (x, y); Mov (y, eax)]
+                 | "*" ->
+                     save_regs [Mov (y, eax); Mul (x, eax); Mov (eax, y)]
+                 | "/" ->
+                    save_regs [Mov (y, eax); Cdq; Div (x, y); Mov (eax, y)]
+                 | "%" ->
+                    save_regs [Mov (y, eax); Cdq; Div (x, y); Mov (ebx, y)]
+                 | "<" ->
+                    to_eax_ebx x y @@ fun x y -> compare x y Setl
+                 | "<=" ->
+                    to_eax_ebx x y @@ fun x y -> compare x y Setle
+                 | ">" ->
+                    to_eax_ebx x y @@ fun x y -> compare x y Setg
+                 | ">=" ->
+                    to_eax_ebx x y @@ fun x y -> compare x y Setge
+                 | "==" ->
+                    to_eax_ebx x y @@ fun x y -> compare x y Sete
+                 | "!=" ->
+                    to_eax_ebx x y @@ fun x y -> compare x y Setne
+                 | "&&" ->
+                    save_regs [
+                                    (* Set eax value to null, mov x to edx, check that edx is not null
+                                       if it is true - in eax we now have not null 
+                                    *)
+                                    Xor (eax, eax);
+                                    Mov (x, ebx);
+                                    Cmp (ebx, eax);
+                                    Setne;
+                                    (* Mov y to edx and mul eax and edx (result in edx)
+                                       result of && is not null only if eax not null (x != 0) and edx not null (y != 0) *)
+                                    Mov (y, ebx);
+                                    Mul (eax, ebx);
+                                    Xor (eax, eax);
+                                    Cmp (ebx, eax);
+                                    Setne;
+                                    Mov (eax, y)]
+                 | "!!" ->
+                    save_regs [
+                                    (* Set eax value to null, mov x to edx, check that or y, edx not null*)
+                                    Xor (eax, eax);
+                                    Mov (x, ebx);
+                                    Or (y, ebx);
+                                    Cmp (ebx, eax);
+                                    Setne;
+                                    Mov (eax, y)]
+              ), sstack'
       in
       let env, code', sstack'' = sint env prg' sstack' in
       env, code @ code', sstack''
