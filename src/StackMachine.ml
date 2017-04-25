@@ -8,8 +8,7 @@ module Instr =
       | PUSH of int
       | LD   of string
       | ST   of string
-      | ADD  
-      | MUL
+      | BINOP of string
 
   end
 
@@ -25,6 +24,7 @@ module Interpret =
 
     open Instr
     open Interpret.Stmt
+    open Language.BinOp
 
     let run prg input =
       let rec run' prg ((stack, st, input, output) as conf) =
@@ -41,13 +41,10 @@ module Interpret =
             | LD   x -> (st x :: stack, st, input, output)
 	    | ST   x -> let z :: stack' = stack in
               (stack', update st x z, input, output)
-	    | _ -> let y :: x :: stack' = stack in
-              ((match i with ADD -> (+) | _ -> ( * )) x y :: stack', 
-               st, 
-               input, 
-               output
-              )
-           )
+	    | BINOP op ->
+		  let y::x::stack' = stack in
+                  ((apply op x y)::stack', st, input, output)
+        )
       in
       let (_, _, _, output) = 
 	run' prg ([], 
@@ -72,8 +69,7 @@ module Compile =
 	let rec compile = function 
 	| Var x      -> [LD   x]
 	| Const n    -> [PUSH n]
-	| Add (x, y) -> (compile x) @ (compile y) @ [ADD]
-	| Mul (x, y) -> (compile x) @ (compile y) @ [MUL]
+    | Binop (op, x, y) -> (compile x) @ (compile y) @ [BINOP op]
 
       end
 

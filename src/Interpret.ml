@@ -5,14 +5,14 @@ module Expr =
   struct
 
     open Expr
+    open Language.BinOp
 
     let rec eval expr st = 
       let eval' e = eval e st in
       match expr with
       | Var   x     -> st x
       | Const z     -> z
-      | Add  (x, y) -> eval' x + eval' y
-      | Mul  (x, y) -> eval' x * eval' y
+      | Binop  (op, x, y) -> (apply op) (eval' x) (eval' y)
 
   end
 
