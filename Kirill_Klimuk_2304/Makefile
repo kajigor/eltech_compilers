@@ -9,7 +9,7 @@ endif
 BYTE_TARGETS=src/rc.byte 
 NATIVE_TARGETS=src/rc.native
 
-.PHONY: all clean runtime check
+.PHONY: all clean runtime checkTests checkETests checkDETests 
 
 .DEFAULT_GOAL: all
 
@@ -21,8 +21,14 @@ runtime:
 main:
 	$(OB) -Is src $(BYTE_TARGETS) $(NATIVE_TARGETS)
 
-check:
-	cd .. && cd regression && make check
+checkTests:
+	cd regression && make check && cd ..
 	
+checkETests:
+	cd regression && cd expressions && make check && cd ..	&& cd ..
+	
+checkDETests:
+	cd regression && cd deep-expressions && make check && cd ..	&& cd ..
+		
 clean: 
-	cd runtime && make clean && cd .. && $(RM) -r _build *.log  *.native *.byte
+	cd runtime && make clean && cd .. && cd regression && make clean && cd .. &&  $(RM) -r _build *.log  *.native *.byte

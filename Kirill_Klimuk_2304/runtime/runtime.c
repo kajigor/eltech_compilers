@@ -1,14 +1,14 @@
 # include <stdio.h>
 
-int lread () {
-  int d;
+long lread () {
+  long d;
   printf ("> ");
   fflush (stdout);
-  scanf ("%d", &d);
+  scanf ("%ld", &d);
   return d;
 }
 
-void lwrite (int n) {
-  printf ("%d\n", n);
+void lwrite (long n) {
+  printf ("%ld\n", n);
   fflush (stdout);
 }

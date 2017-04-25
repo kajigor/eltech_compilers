@@ -11,7 +11,7 @@ let parse filename =
        inherit Util.Lexers.ident ["read"; "write"; "skip"] s
        inherit Util.Lexers.decimal s
        inherit Util.Lexers.skip [
-         Matcher.Skip.whitespaces " \t\n";
+         Matcher.Skip.whitespaces " \t\r\n";
 	 Matcher.Skip.lineComment "--";
 	 Matcher.Skip.nestedComment "(*" "*)"
        ] s
@@ -29,7 +29,7 @@ let main =
       if to_compile
       then 
         let basename = Filename.chop_suffix infile ".expr" in
-        ignore @@ X86.build prog basename
+        ignore @@ X64.build prog basename
       else 
 	let rec read acc =
 	  try

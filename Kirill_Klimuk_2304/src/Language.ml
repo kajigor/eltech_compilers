@@ -8,25 +8,26 @@ module Expr =
     | Const of int
     | Bin   of string * t * t
 
-    let rec parse s =                                                                                    
+    let rec expr_parse s =                                                                                    
       expr id
       [|     
 		(*Bool 0/1*)
-        `Lefta , [ostap ("||"), (fun x y -> Bin ("||", x, y))];    
-        `Lefta , [ostap ("&&"), (fun x y -> Bin ("&&", x, y))]; 
+        `Nona , [ostap ("!!"), (fun x y -> Bin ("||", x, y))];
+		`Nona , [ostap ("&&"), (fun x y -> Bin ("&&", x, y))];     
 		(*Bool Arith*)
-        `Nona , [ostap ("=="), (fun x y -> Bin ("==", x, y))]; 
-		`Nona , [ostap ("!="), (fun x y -> Bin ("!=", x, y))]; 
-		`Nona , [ostap ("<="), (fun x y -> Bin ("<=", x, y))]; 
-		`Nona , [ostap (">="), (fun x y -> Bin (">=", x, y))]; 
-		`Nona , [ostap ("<"), (fun x y  -> Bin ("<", x, y))]; 
-		`Nona , [ostap (">"), (fun x y  -> Bin (">", x, y))]; 
+        `Nona, [ostap ("=="), (fun x y -> Bin ("==", x, y)); 
+				 ostap ("!="), (fun x y -> Bin ("!=", x, y)); 
+				 ostap ("<="), (fun x y -> Bin ("<=", x, y)); 
+				 ostap (">="), (fun x y -> Bin (">=", x, y)); 
+				 ostap ("<"),  (fun x y  -> Bin ("<", x, y)); 
+				 ostap (">"),  (fun x y  -> Bin (">", x, y))]; 
 		(*Arith*)
-        `Lefta , [ostap ("+"), (fun x y  -> Bin ("+", x, y))]; 
-        `Lefta , [ostap ("*"), (fun x y  -> Bin ("*", x, y))];
-		`Lefta , [ostap ("-"), (fun x y  -> Bin ("-", x, y))];
-		`Lefta , [ostap ("/"), (fun x y  -> Bin ("/", x, y))];
-		`Lefta , [ostap ("%"), (fun x y  -> Bin ("%", x, y))];
+        `Lefta, [ostap ("+"),  (fun x y  -> Bin ("+", x, y)); 
+				 ostap ("-"),  (fun x y  -> Bin ("-", x, y))];
+				 
+		`Lefta, [ostap ("*"),  (fun x y  -> Bin ("*", x, y));
+				 ostap ("/"),  (fun x y  -> Bin ("/", x, y));
+				 ostap ("%"),  (fun x y  -> Bin ("%", x, y))];
 		
       |]                                                                                            
       expr' s                                                                                            
@@ -35,7 +36,7 @@ module Expr =
         expr':
           n:DECIMAL                 {Const n}  
           | e:IDENT                 {Var e}
-          | -"(" parse -")") 
+          | -"(" expr_parse -")") 
 
 		
 	let operation_to_func f = match f with 
@@ -70,7 +71,7 @@ module Stmt =
 	(*| IfElse  of Expr.t * t * t
 	| WhileDo of Expr.t * t*)
 	
-    let expr = Expr.parse
+    let expr = Expr.expr_parse
 
     ostap (
       simp: x:IDENT ":=" e:expr  {Assign (x, e)}
@@ -78,7 +79,9 @@ module Stmt =
       | %"write" "(" e:expr  ")" {Write e}
       | %"skip"                  {Skip};
       
-      parse: s:simp ";" d:parse {Seq (s,d)} | simp 
+      parse: 
+	  s:simp ";" d:parse 		 {Seq (s,d)} 
+	  | simp 
     )
 
   end
