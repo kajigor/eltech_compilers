@@ -26,7 +26,6 @@ main:
 	movl	x,%eax
 	movl	y,%ebx
 	idiv	%ebx,%eax
-	movl	%edx,%eax
 	pushl	%eax
 	call	lwrite
 	popl	%edx

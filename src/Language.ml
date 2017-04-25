@@ -30,8 +30,8 @@ module Expr =
     
        ostap (
        	 parse: expr0;
-       	 expr0: h:expr1 t:(-"!!" expr1)* {
-       	  List.fold_left(fun e op ->Binop( "!!" , e, op)) h t};
+       	 expr0: h:expr1 t:(-"||" expr1)* {
+       	  List.fold_left(fun e op ->Binop( "||" , e, op)) h t};
 
        	 expr1: h:expr2 t:(-"&&" expr2)* {
        	  List.fold_left(fun e op ->Binop( "&&" , e, op)) h t};

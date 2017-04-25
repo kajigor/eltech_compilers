@@ -13,9 +13,8 @@ TESTS = test001 test002 test012 test013  test003 test004 test005 test006 test007
 check: $(TESTS) 
 
 $(TESTS): %: %.expr
+	../rc.native     $< && cat $@.input | ./$@ > $@.log && diff $@.log orig/$@.log
 	
-	cat $@.input | ../rc.native -i $< > $@.log && diff $@.log orig/$@.log
-	cat $@.input | ../rc.native -s $< > $@.log && diff $@.log orig/$@.log
 	
 clean:
 	rm -f test*.log *.s *~ $(TESTS)
