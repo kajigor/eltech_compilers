@@ -11,7 +11,7 @@ module Expr =
     | Mul   	of t * t 
 	| Sub   	of t * t
     | Div   	of t * t
-    | Mod   	of t * t
+    | Rem   	of t * t
     | Or    	of t * t
     | And       of t * t
     | Equal     of t * t
