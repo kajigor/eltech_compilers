@@ -3,15 +3,11 @@ open Instr
 
 type opnd = R of int | S of int | L of int | M of string
 
-let regs  = [|"%eax"; "%ebx"; "%ecx"; "%edi"; "%esi"; "%edx"; "%esp"; "%ebp"|]
+let regs  = [|"%eax"; "%ebx"; "%ecx"; "%esi"; "%edi"; "%edx"; "%esp"; "%ebp"|]
 let nregs = Array.length regs - 3
 
-let [|eax; ebx; ecx; edx; esi; edi; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
+let [|eax; ebx; ecx; esi; edi; edx; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
 
-(*иначе edx будет edi*)
-let tmp = edi
-let edi = edx
-let edx = tmp
 
 type instr =
 | Add  of opnd * opnd
@@ -101,7 +97,7 @@ class env =
     val depth  = 0
 	
     method allocate = function
-      | []                          -> this, R 2
+      | []                          -> this, R 1
       | R i :: _ when i < nregs - 1 -> this, R (i+1)
       | S i :: _                    -> {< depth = max depth (i+1) >}, S (i+1)
       | _                           -> {< depth = max depth 1 >}, S 1 
@@ -131,7 +127,7 @@ let rec sint env prg sstack =
         | READ  ->
             env, [Call "lread"], [eax]
         | WRITE ->
-            env, [Push (R 2); Call "lwrite"; Pop (R 2)], [] 
+            env, [Push (R 1); Call "lwrite"; Pop (R 1)], [] 
         | BINOP op ->
             let x::(y::_ as sstack') = sstack in
             env, (match op with
