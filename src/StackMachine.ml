@@ -18,9 +18,9 @@ module Instr =
       | EQUAL
       | NOTEQUAL
       | LESS
-      | MORE
+      | GREATER
       | LESSEQUAL
-      | MOREEQUAL
+      | GREATEREQUAL
 
   end
 
@@ -58,19 +58,19 @@ module Interpret =
           (stack', update st x z, input, output)
         | _ -> let y :: x :: stack' = stack in
           ((match i with 
-            | ADD       -> ( + ) 
-            | SUB       -> ( - )
-            | MUL       -> ( * )
-            | DIV       -> ( / )
-            | REM       -> ( mod )
-            | OR        -> (fun a b -> if (a == 0) && (b == 0) then 0 else 1)
-            | AND       -> (fun a b -> if (a == 0) || (b == 0) then 0 else 1)
-            | EQUAL     -> (fun a b -> if (a == b) then 1 else 0)
-            | NOTEQUAL  -> (fun a b -> if (a != b) then 1 else 0)
-            | LESS      -> (fun a b -> if (a < b) then 1 else 0)
-            | MORE      -> (fun a b -> if (a > b) then 1 else 0)
-            | LESSEQUAL -> (fun a b -> if (a <= b) then 1 else 0)
-            | MOREEQUAL -> (fun a b -> if (a >= b) then 1 else 0)
+            | ADD           -> ( + ) 
+            | SUB           -> ( - )
+            | MUL           -> ( * )
+            | DIV           -> ( / )
+            | REM           -> ( mod )
+            | OR            -> (fun a b -> if (a == 0) && (b == 0) then 0 else 1)
+            | AND           -> (fun a b -> if (a == 0) || (b == 0) then 0 else 1)
+            | EQUAL         -> (fun a b -> if (a == b) then 1 else 0)
+            | NOTEQUAL      -> (fun a b -> if (a != b) then 1 else 0)
+            | LESS          -> (fun a b -> if (a < b) then 1 else 0)
+            | GREATER       -> (fun a b -> if (a > b) then 1 else 0)
+            | LESSEQUAL     -> (fun a b -> if (a <= b) then 1 else 0)
+            | GREATEREQUAL  -> (fun a b -> if (a >= b) then 1 else 0)
           ) 
           x y :: stack', st, input, output)
       )
@@ -99,21 +99,21 @@ module Compile =
     let rec compile = 
     let twoargs op x y = (compile x) @ (compile y) @ [op] in
     function 
-    | Var x             -> [LD   x]
-    | Const n           -> [PUSH n]
-    | Add (x, y)        -> twoargs ADD x y
-    | Sub (x, y)        -> twoargs SUB x y
-    | Mul (x, y)        -> twoargs MUL x y
-    | Div (x, y)        -> twoargs DIV x y
-    | Rem (x, y)        -> twoargs REM x y
-    | Or (x, y)         -> twoargs OR x y
-    | And (x, y)        -> twoargs AND x y
-    | Equal (x, y)      -> twoargs EQUAL x y
-    | NotEqual (x, y)   -> twoargs NOTEQUAL x y
-    | Less (x, y)       -> twoargs LESS x y
-    | More (x, y)       -> twoargs MORE x y
-    | LessEqual (x, y)  -> twoargs LESSEQUAL x y
-    | MoreEqual (x, y)  -> twoargs MOREEQUAL x y
+    | Var x               -> [LD   x]
+    | Const n             -> [PUSH n]
+    | Add (x, y)          -> twoargs ADD x y
+    | Sub (x, y)          -> twoargs SUB x y
+    | Mul (x, y)          -> twoargs MUL x y
+    | Div (x, y)          -> twoargs DIV x y
+    | Rem (x, y)          -> twoargs REM x y
+    | Or (x, y)           -> twoargs OR x y
+    | And (x, y)          -> twoargs AND x y
+    | Equal (x, y)        -> twoargs EQUAL x y
+    | NotEqual (x, y)     -> twoargs NOTEQUAL x y
+    | Less (x, y)         -> twoargs LESS x y
+    | Greater (x, y)      -> twoargs GREATER x y
+    | LessEqual (x, y)    -> twoargs LESSEQUAL x y
+    | GreaterEqual (x, y) -> twoargs GREATEREQUAL x y
 
     end
 

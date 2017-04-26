@@ -135,7 +135,7 @@ let rec sint env prg sstack =
           match x, y with
           | S _, S _ ->    (*if both operands in stack - need to move one in register*)
             let short arr = env, [Mov (y, edx)] @ arr @ [Mov (edx, y)], sstack' in
-            let shorteq set = short [Cmp(x, edx); Mov (L 0, edx); set] in
+            let shorteq set = short ([Cmp(x, edx); Mov (L 0, edx)] @ set) in
             (match i with
             | MUL         -> short [Mul(x, edx)]
             | DIV         -> env, [Mov (y, eax); Cltd; Div x; Mov (eax, y)], sstack'
@@ -144,16 +144,16 @@ let rec sint env prg sstack =
             | SUB         -> short [Sub(x, edx)]
             | OR          -> short [OrBin(x, edx); Mov (L 0, edx); Setne dl]
             | AND         -> env, andcode, sstack'
-            | EQUAL       -> shorteq (Sete dl)
-            | NOTEQUAL    -> shorteq (Setne dl)
-            | LESS        -> shorteq (Setl dl)
-            | MORE        -> shorteq (Setg dl)
-            | LESSEQUAL   -> shorteq (Setle dl)
-            | MOREEQUAL   -> shorteq (Setge dl)
+            | EQUAL       -> shorteq [Sete dl]
+            | NOTEQUAL    -> shorteq [Setne dl]
+            | LESS        -> shorteq [Setl dl]
+            | GREATER     -> shorteq [Setg dl]
+            | LESSEQUAL   -> shorteq [Setle dl]
+            | GREATEREQUAL-> shorteq [Setge dl]
             )
           | _ ->           (*if one or both operands in register*)
             let short codearr = env, codearr, sstack' in
-            let shorteq set = short [Cmp(x, y); Mov (L 0, edx); set; Mov (edx, y)] in
+            let shorteq setop = short ([Cmp(x, y); Mov (L 0, edx)] @ setop @ [Mov (edx, y)]) in
             (match i with
             | MUL         -> short [Mul(x, y)]
             | DIV         -> env, [Mov (y, eax); Cltd; Div x; Mov (eax, y)], sstack'
@@ -162,12 +162,12 @@ let rec sint env prg sstack =
             | SUB         -> short [Sub(x, y)]
             | OR          -> short [OrBin(x, y); Mov (L 0, edx); Setne dl; Mov (edx, y)]
             | AND         -> env, andcode, sstack'
-            | EQUAL       -> shorteq (Sete dl)
-            | NOTEQUAL    -> shorteq (Setne dl)
-            | LESS        -> shorteq (Setl dl)
-            | MORE        -> shorteq (Setg dl)
-            | LESSEQUAL   -> shorteq (Setle dl)
-            | MOREEQUAL   -> shorteq (Setge dl)
+            | EQUAL       -> shorteq [Sete dl]
+            | NOTEQUAL    -> shorteq [Setne dl]
+            | LESS        -> shorteq [Setl dl]
+            | GREATER     -> shorteq [Setg dl]
+            | LESSEQUAL   -> shorteq [Setle dl]
+            | GREATEREQUAL-> shorteq [Setge dl]
             )   
     in
     let env, code', sstack'' = sint env prg' sstack' in
