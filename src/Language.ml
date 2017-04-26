@@ -1,21 +1,55 @@
+open Ostap.Util
+
 (* AST for expressions *)
 module Expr =
   struct
 
     type t =
-    | Var   of string
-    | Const of int
-    | Add   of t * t
-    | Mul   of t * t 
+    | Var       of string
+    | Const     of int
+    | Add       of t * t
+    | Sub       of t * t
+    | Mul       of t * t
+    | Div       of t * t
+    | Rem       of t * t
+    | Or        of t * t
+    | And       of t * t
+    | Equal     of t * t
+    | NotEqual  of t * t
+    | Less      of t * t
+    | More      of t * t
+    | LessEqual of t * t
+    | MoreEqual of t * t
 
-    ostap (
-      parse: x:mull "+" y:parse {Add (x,y)} | mull;
-      mull : x:prim "*" y:mull  {Mul (x,y)} | prim; 
-      prim : 
-        n:DECIMAL       {Const n}  
-      | e:IDENT         {Var e}
-      | -"(" parse -")" 
-    )
+    let rec expr_parser s =                                                                                    
+      expr id
+      [|     
+        `Nona ,  [ostap ("||"), (fun x y -> Or (x, y)); 
+                  ostap ("!!"), (fun x y -> Or (x, y));];  
+                    
+        `Nona ,  [ostap ("&&"), (fun x y -> And (x, y))]; 
+        
+        `Nona ,  [ostap ("=="), (fun x y -> Equal (x, y)); 
+                  ostap ("!="), (fun x y -> NotEqual (x, y));
+                  ostap ("<="), (fun x y -> LessEqual (x, y));
+                  ostap (">="), (fun x y -> MoreEqual (x, y));
+                  ostap ("<"), (fun x y -> Less (x, y));
+                  ostap (">"), (fun x y -> More (x, y))];
+
+        `Lefta , [ostap ("+"), (fun x y -> Add (x, y));
+                  ostap ("-"), (fun x y -> Sub (x, y))]; 
+
+        `Lefta , [ostap ("*"), (fun x y -> Mul (x, y));
+                  ostap ("/"), (fun x y -> Div (x, y));
+                  ostap ("%"), (fun x y -> Rem (x, y))]
+      |]                                                                                            
+      expr' s                                                                                             
+      and 
+      ostap (
+        expr':
+          n:DECIMAL                 {Const n}  
+          | e:IDENT                 {Var e}
+          | -"(" expr_parser -")") 
 
   end
 
@@ -30,15 +64,18 @@ module Stmt =
     | Write  of Expr.t
     | Seq    of t * t
 
-    let expr = Expr.parse
+    let expr_parser = Expr.expr_parser
 
     ostap (
-      simp: x:IDENT ":=" e:expr  {Assign (x, e)}
-      | %"read"  "(" x:IDENT ")" {Read x}
-      | %"write" "(" e:expr  ")" {Write e}
-      | %"skip"                  {Skip};
-      
-      parse: s:simp ";" d:parse {Seq (s,d)} | simp 
+      simp: 
+        x:IDENT ":=" e:expr_parser        {Assign (x, e)}
+        | %"read" "(" x:IDENT ")"         {Read x}
+        | %"write" "(" e:expr_parser ")"  {Write e}
+        | %"skip"                         {Skip};
+          
+      parse: 
+        s:simp ";" d:parse                {Seq (s,d)}
+        | simp 
     )
 
   end
