@@ -32,7 +32,8 @@ module Stmt =
 	  (update st x z, input', output)
       | Write   e     -> (st, input, output @ [Expr.eval e st])
       | Seq (s1, s2)  -> eval s1 conf |> eval s2 
-
+	  | IfElse (e, s1, s2) -> if (Expr.eval e st) == 1 then eval s1 conf else eval s2 conf
+	  | WhileDo (e, s) -> if (Expr.eval e st) == 1 then eval stmt (eval s conf) else conf
   end
 
 module Program =

@@ -21,10 +21,14 @@ type instr =
 | Add  of opnd * opnd
 | Mul  of opnd * opnd
 (*Bool*)
+| Xor  of opnd * opnd
 | And  of opnd * opnd
 | Or   of opnd * opnd
 (*Common*)
 | Cmp  of opnd * opnd
+| Jmp  of string
+| Jz   of string
+| Lbl  of string 
 | Set  of string * opnd
 | Mov  of opnd * opnd
 | Push of opnd
@@ -73,10 +77,14 @@ let rec sint env prg sstack =
         | READ  ->
             env, [Call "lread"], rax::sstack
         | WRITE -> let s :: sstack' = sstack in 
-            env, [Mov(rdi, rax); Mov(s, rdi); Call "lwrite"; Mov(rax,rdi)], sstack'
+            env, [Push rdi; Mov(s, rdi); Call "lwrite"; Pop rdi], sstack'
+		| JMP label     -> env, [Jmp label], sstack
+		| JZ  label     -> let s :: sstack' = sstack in
+			env, [Cmp (L 0, s); Jz  label], sstack'
+		| LABEL s       -> env, [Lbl s], sstack
         | BIN f ->
             let x::(y::_ as sstack') = sstack in
-			let transform_to_01 t = [Mov (t, rdx); And (t, rdx); Mov (L 0, rdx); Set("ne", dl)] in
+			let transform_to_01 t = [Mov (t, rdx); And (t, rdx);  Mov(L 0, rdx); Set("ne", dl)] in
 			let instrCode a b = (match f with 
 				(* Arith *)
 				| "+" -> [Add (a, b)]
@@ -86,19 +94,19 @@ let rec sint env prg sstack =
 				| "%" -> [Mov (b,rax); Cqo; Div a; Mov (rdx, b)]
 				(*Bool 0/1*) 
 				| "&&" -> transform_to_01 b @ [Mov (rdx, b)] @ transform_to_01 a @ [And(b,rdx); Mov(L 0, rdx); Set("ne", dl); Mov (rdx, b)]  
-				| "||" -> transform_to_01 b @ [Mov (rdx, b)] @ transform_to_01 a @ [Or(b,rdx); Mov(L 0, rdx); Set("ne", dl); Mov (rdx, b)]
+				| "||" -> transform_to_01 b @ [Mov (rdx, b)] @ transform_to_01 a @ [Or(b,rdx);  Mov(L 0, rdx); Set("ne", dl); Mov (rdx, b)]
 				(*Bool Arith*)
-				| "==" -> [Cmp(a,b); Mov (L 0, rdx); Set("e", dl) ;Mov (rdx, b)]
-				| "!=" -> [Cmp(a,b); Mov (L 0, rdx); Set("ne", dl);Mov (rdx, b)]
-				| "<=" -> [Cmp(a,b); Mov (L 0, rdx); Set("le", dl);Mov (rdx, b)]
-				| "<"  -> [Cmp(a,b); Mov (L 0, rdx); Set("l", dl) ;Mov (rdx, b)]
-				| ">=" -> [Cmp(a,b); Mov (L 0, rdx); Set("ge", dl);Mov (rdx, b)]
-				| ">"  -> [Cmp(a,b); Mov (L 0, rdx); Set("g", dl) ;Mov (rdx, b)]
+				| "==" -> [Cmp(a,b);  Mov(L 0, rdx); Set("e", dl) ;Mov (rdx, b)]
+				| "!=" -> [Cmp(a,b);  Mov(L 0, rdx); Set("ne", dl);Mov (rdx, b)]
+				| "<=" -> [Cmp(a,b);  Mov(L 0, rdx); Set("le", dl);Mov (rdx, b)]
+				| "<"  -> [Cmp(a,b);  Mov(L 0, rdx); Set("l", dl) ;Mov (rdx, b)]
+				| ">=" -> [Cmp(a,b);  Mov(L 0, rdx); Set("ge", dl);Mov (rdx, b)]
+				| ">"  -> [Cmp(a,b);  Mov(L 0, rdx); Set("g", dl) ;Mov (rdx, b)]
 				
               ) in
-			   match x, y with
+			    match x, y with
 				  | S _, S _ -> env, [Mov (y, rax)] @ instrCode x rax @[Mov (rax, y)], sstack'
-				  | _        -> env, instrCode x y, sstack'  
+				  | _        -> env, instrCode x y, sstack';
       in
       let env, code', sstack'' = sint env prg' sstack' in
       env, code @ code', sstack''
@@ -122,6 +130,7 @@ let printInstr instr =
   | Add (x, y) -> Printf.sprintf "addq\t%s,\t%s"  (printOp x) (printOp y)
   | Mul (x, y) -> Printf.sprintf "imulq\t%s,\t%s" (printOp x) (printOp y)
   (*Bool*)
+  | Xor (x, y) -> Printf.sprintf "xorq\t%s,\t%s"  (printOp x) (printOp y)
   | And (x, y) -> Printf.sprintf "andq\t%s,\t%s"  (printOp x) (printOp y)
   | Or  (x, y) -> Printf.sprintf "orq\t%s,\t%s"   (printOp x) (printOp y)
   (*Common*)
@@ -131,9 +140,11 @@ let printInstr instr =
   | Push     x -> Printf.sprintf "pushq\t%s"      (printOp x)
   | Pop      x -> Printf.sprintf "popq\t%s"       (printOp x)
   | Call     f -> Printf.sprintf "call\t%s"  f
+  | Jmp      s -> Printf.sprintf "jmp\t%s" s
+  | Jz  	 s -> Printf.sprintf "jz\t%s"  s
+  | Lbl      s -> Printf.sprintf "\n%s:"   s
   | Cqo 	   -> "cqto"
   | Ret        -> "ret"
-
 
 let printAsmCode code = List.fold_left (fun acc i -> Printf.sprintf "%s\t%s\n" (acc) (printInstr i)) ("") (code)
 							

@@ -5,11 +5,13 @@ module Instr =
     type t =
       | READ
       | WRITE
-      | PUSH of int
-      | LD   of string
-      | ST   of string
-      | BIN  of string
-
+      | PUSH  of int
+      | LD    of string
+      | ST    of string
+      | BIN   of string
+	  | JMP   of string
+	  | JZ	  of string
+	  | LABEL of string
   end
 
 module Program =
@@ -26,10 +28,22 @@ module Interpret =
     open Interpret.Stmt
 	open Language.Expr
 	
-    let run prg input =
+	let findLabelCode prg lbl = 
+		let rec findLabelCode' prg =
+			match prg with
+			| [] -> failwith(Printf.sprintf "No label: %s" lbl)
+			| (LABEL l) :: prg' -> if l = lbl then prg' else findLabelCode' prg'
+			| i :: prg' -> findLabelCode' prg'
+		in findLabelCode' prg
+			
+    let run fullPrg input =
       let rec run' prg ((stack, st, input, output) as conf) =
 	match prg with
 	| []        -> conf
+	| (JMP s) :: prg'-> run' (findLabelCode fullPrg s) (stack, st, input, output)
+	| (JZ s) :: prg' -> let x :: stack' = stack in 
+						if (x == 0) then run' (findLabelCode fullPrg s) (stack', st, input, output)
+									else run' prg' (stack', st, input, output)
 	| i :: prg' ->
             run' prg' (
             match i with
@@ -47,10 +61,11 @@ module Interpret =
                input, 
                output
               )
+			| LABEL s -> (stack, st, input, output)
            )
       in
       let (_, _, _, output) = 
-	run' prg ([], 
+	run' fullPrg ([], 
 	          (fun _ -> failwith "undefined variable"),
 	          input,
 	          []
@@ -80,14 +95,28 @@ module Compile =
       struct
 
 	open Language.Stmt
-
+	
+	let gen_label length =
+		let gen() = match Random.int(26+26) with
+			n when n < 26 -> int_of_char 'a' + n
+		  | n when n < 26 + 26 -> int_of_char 'A' + n - 26 in
+		let gen _ = String.make 1 (char_of_int(gen())) in
+		String.concat "" (Array.to_list (Array.init length gen))        
+	
 	let rec compile = function
 	| Skip          -> []
 	| Assign (x, e) -> Expr.compile e @ [ST x]
 	| Read    x     -> [READ; ST x]
 	| Write   e     -> Expr.compile e @ [WRITE]
 	| Seq    (l, r) -> compile l @ compile r
-
+	| IfElse (e, s1, s2) -> let elseLbl = gen_label (Random.int(15)+1) in 
+							let endLbl = gen_label (Random.int(15)+1)  in 
+							Expr.compile e @ [JZ elseLbl] @ compile s1 @ [JMP endLbl] @
+							[LABEL elseLbl] @ compile s2 @ [LABEL endLbl]
+	| WhileDo (e, s) -> let startLbl = gen_label (Random.int(15)+1) in 
+						let endLbl = gen_label (Random.int(15)+1)  in 
+						[LABEL startLbl] @ Expr.compile e @ [JZ endLbl] @ 
+						compile s @ [JMP startLbl] @ [LABEL endLbl]
       end
 
     module Program =

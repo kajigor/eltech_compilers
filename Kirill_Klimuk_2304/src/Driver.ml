@@ -8,7 +8,7 @@ let parse filename =
   Util.parse 
     (object 
        inherit Matcher.t s 
-       inherit Util.Lexers.ident ["read"; "write"; "skip"] s
+       inherit Util.Lexers.ident ["read"; "write"; "skip"; "if"; "while"] s
        inherit Util.Lexers.decimal s
        inherit Util.Lexers.skip [
          Matcher.Skip.whitespaces " \t\r\n";

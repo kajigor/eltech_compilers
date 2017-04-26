@@ -68,17 +68,19 @@ module Stmt =
     | Read    of string
     | Write   of Expr.t
     | Seq     of t * t
-	(*| IfElse  of Expr.t * t * t
-	| WhileDo of Expr.t * t*)
+	| IfElse  of Expr.t * t * t
+	| WhileDo of Expr.t * t
 	
     let expr = Expr.expr_parse
 
     ostap (
-      simp: x:IDENT ":=" e:expr  {Assign (x, e)}
-      | %"read"  "(" x:IDENT ")" {Read x}
-      | %"write" "(" e:expr  ")" {Write e}
-      | %"skip"                  {Skip};
-      
+      simp: x:IDENT ":=" e:expr  								{Assign (x, e)}
+      | %"read"  "(" x:IDENT ")" 								{Read x}
+      | %"write" "(" e:expr  ")" 								{Write e}
+      | %"skip"                  								{Skip}
+      | %"if"    e: expr "then" s1: parse "else" s2: parse "fi"	{IfElse (e,s1,s2)}
+	  | %"while" e: expr "do"   s:  parse "od"					{WhileDo (e,s)};
+	  
       parse: 
 	  s:simp ";" d:parse 		 {Seq (s,d)} 
 	  | simp 
