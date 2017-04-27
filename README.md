@@ -1,3 +1,11 @@
+Build & use: 
+
+`$ make`
+
+`$ cat test001.input | ./rc.native [-i | -s] test001.expr`
+
+`$ ./test001`
+
 Dependencies:
 
 `$ opam pin add GT https://github.com/Kakadu/GT.git -n -y`
@@ -6,17 +14,7 @@ Dependencies:
 
 `$ opam install GT ocamlfind -y`
 
-Build & use: 
-
-`$ make`
-
-`$ gcc -m32 -c runtime.c`
-
-`$ RUNTIME=. ./compiler file.expr`
-
-`$ ./file`
-
-If make fails with an error which states that GT.Syntax.All cannot be found, make sure you initialized and configured opam: 
+If make fails with an error which states that GT.Syntax.All can't be found, make sure you initialized and configured opam: 
 
 `$ opam init`
 
