@@ -1,10 +1,10 @@
-TESTS=test009 test010 test014 test015 test016 test017 test018
+TESTS=test001 test002 test003 test004 test005 test006 test007 test008 test012 test013 test009 test010 test014 test015 test016 test017 test018
 
 #Expressions:
 #test001 test002 test003 test004 test005 test006 test007 test008 test012 test013
 
 #If, while:
-#test009 test010 test014 test015 test016 test017 test018 test019 test020 test021 test022
+#test009 test010 test014 test015 test016 test017 test018
 
 #For
 #test019 test020 test021 test022
@@ -19,9 +19,9 @@ TESTS=test009 test010 test014 test015 test016 test017 test018
 check: $(TESTS)
 
 $(TESTS): %: %.expr
-	../rc.native $< && cat $@.input | ./$@ > $@.log && diff $@.log orig/$@.log
-	cat $@.input | ../rc.native -i $< > $@.log && diff $@.log orig/$@.log
-	cat $@.input | ../rc.native -s $< > $@.log && diff $@.log orig/$@.log
+	../rc.native $< ; cat $@.input | ./$@ > $@.log ; diff $@.log orig/$@.log
+	cat $@.input | ../rc.native -i $< > $@.log ; diff $@.log orig/$@.log
+	cat $@.input | ../rc.native -s $< > $@.log ; diff $@.log orig/$@.log
 
 clean:
 	rm -f test*.log *.s *~ $(TESTS)
