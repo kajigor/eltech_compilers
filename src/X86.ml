@@ -31,14 +31,19 @@ type instr =
   | Setg    of string
   | Setle   of string
   | Setge   of string
+  | Lbl     of int
+  | Jz      of int
+  | Jnz     of int
+  | Jmp     of int
+  | Test    of opnd * opnd
 
-let to_string buf code =      
+let to_string buf code =
   let instr =
     let opnd = function
       | R i -> regs.(i)
       | S i -> Printf.sprintf "%d(%%ebp)" (-i * 4)
       | L i -> Printf.sprintf "$%d" i
-      | M s -> s 
+      | M s -> s
     in
     function
       | Add (x, y)    -> Printf.sprintf "addl\t%s,%s"  (opnd x) (opnd y)
@@ -49,7 +54,7 @@ let to_string buf code =
       | Mov (x, y)    -> Printf.sprintf "movl\t%s,%s"  (opnd x) (opnd y)
       | Push x        -> Printf.sprintf "pushl\t%s"    (opnd x)
       | Pop  x        -> Printf.sprintf "popl\t%s"     (opnd x)
-      | Call x        -> Printf.sprintf "call\t%s"      x
+      | Call x        -> Printf.sprintf "call\t%s"     x
       | Ret           -> "ret"
       | OrBin (x, y)  -> Printf.sprintf "orl\t%s,%s"   (opnd x) (opnd y)
       | AndBin (x, y) -> Printf.sprintf "andl\t%s,%s"  (opnd x) (opnd y)
@@ -60,22 +65,27 @@ let to_string buf code =
       | Setg x        -> Printf.sprintf "setg\t%s"     x
       | Setle x       -> Printf.sprintf "setle\t%s"    x
       | Setge x       -> Printf.sprintf "setge\t%s"    x
+      | Lbl x         -> Printf.sprintf "lbl%d:"       x
+      | Jz x          -> Printf.sprintf "jz\t\tlbl%d"    x
+      | Jnz x         -> Printf.sprintf "jnz\t\tlbl%d"   x
+      | Jmp x         -> Printf.sprintf "jmp\t\tlbl%d"   x
+      | Test (x, y)   -> Printf.sprintf "testl\t%s,%s" (opnd x) (opnd y)
   in
-  let out s = 
-    Buffer.add_string buf "\t"; 
-    Buffer.add_string buf s; 
-    Buffer.add_string buf "\n" 
+  let out s =
+    Buffer.add_string buf "\t";
+    Buffer.add_string buf s;
+    Buffer.add_string buf "\n"
   in
   List.iter (fun i -> out @@ instr i) code
-    
+
 module S = Set.Make (String)
-    
+
 
 class env =
   object (this)
     val locals = S.empty
     val depth  = 0
-  
+
     method allocate = function
       | []                          -> this, R 0
       | R i :: _ when i < nregs - 1 -> this, R (i+1)
@@ -102,40 +112,42 @@ let rec sint env prg sstack =
       | LD x ->
         let env'     = env#local x in
         let env'', s = env'#allocate sstack in
-        env'', (
-          match s with
-          | S _ ->  [Mov (M x, edx); Mov (edx, s)]
-          | _ ->    [Mov (M x, s)]
-        ), s :: sstack
+        (match s with
+        | S _ ->  env'', [Mov (M x, edx); Mov (edx, s)], s :: sstack
+        | _   ->  env'', [Mov (M x, s)], s :: sstack)
 
       | ST x ->
         let env' = env#local x in
         let s :: sstack' = sstack in
-        env', (
-          match s with
-          | S _ ->  [Mov (s, edx); Mov (edx, M x)]
-          | _ ->    [Mov (s, M x)]
-        ), sstack'
+        (match s with
+        | S _ ->  env', [Mov (s, edx); Mov (edx, M x)], sstack'
+        | _   ->  env', [Mov (s, M x)], sstack')
 
-      | READ  ->
-        env, [Call "lread"], [eax]
+      | READ  -> env, [Call "lread"], [eax]
+      | WRITE -> env, [Push ebx; Call "lwrite"; Pop edx], []
+      | LBL x -> env, [Lbl x], []
+      | JMP x -> env, [Jmp x], []
 
-      | WRITE ->
-        env, [Push ebx; Call "lwrite"; Pop edx], []
+      | CJMP (x,c) -> 
+        let s :: sstack' = sstack in
+        let jmpop = (match c with "z"  -> Jz x | "nz" -> Jnz x) in
+        (match s with
+        | S _ ->  env, [Mov (s, edx); Test (edx, edx); jmpop], []
+        | _   ->  env, [Test (s, s); jmpop], [])
 
       | _ ->
         let x::(y::_ as sstack') = sstack in
-        let andcode = [Mov (y, edx); AndBin (y, edx);               (*compare y with self*)
+        let andop   = [Mov (y, edx); AndBin (y, edx);               (*compare y with self*)
                        Mov (L 0, edx); Setne dl;                    (*put result in edx*)
                        Mov (x, eax); AndBin (x, eax);               (*compare x with self*)
                        Mov (L 0, eax); Setne al;                    (*put result in eax*)
                        AndBin (eax, edx); Mov (L 0, edx); Setne dl; (*compare eax with edx and put result in edx*)
-                       Mov (edx, y)] in                             (*put result to y*)
+                       Mov (edx, y)] in                             (*put result in y*)
 
           match x, y with
           | S _, S _ ->    (*if both operands in stack - need to move one in register*)
-            let short arr = env, [Mov (y, edx)] @ arr @ [Mov (edx, y)], sstack' in
-            let shorteq set = short ([Cmp(x, edx); Mov (L 0, edx)] @ set) in
+            let short codearr = env, [Mov (y, edx)] @ codearr @ [Mov (edx, y)], sstack' in
+            let shortcmp set = short ([Cmp(x, edx); Mov (L 0, edx)] @ set) in
             (match i with
             | MUL         -> short [Mul(x, edx)]
             | DIV         -> env, [Mov (y, eax); Cltd; Div x; Mov (eax, y)], sstack'
@@ -143,17 +155,17 @@ let rec sint env prg sstack =
             | ADD         -> short [Add(x, edx)]
             | SUB         -> short [Sub(x, edx)]
             | OR          -> short [OrBin(x, edx); Mov (L 0, edx); Setne dl]
-            | AND         -> env, andcode, sstack'
-            | EQUAL       -> shorteq [Sete dl]
-            | NOTEQUAL    -> shorteq [Setne dl]
-            | LESS        -> shorteq [Setl dl]
-            | GREATER     -> shorteq [Setg dl]
-            | LESSEQUAL   -> shorteq [Setle dl]
-            | GREATEREQUAL-> shorteq [Setge dl]
+            | AND         -> env, andop, sstack'
+            | EQUAL       -> shortcmp [Sete dl]
+            | NOTEQUAL    -> shortcmp [Setne dl]
+            | LESS        -> shortcmp [Setl dl]
+            | GREATER     -> shortcmp [Setg dl]
+            | LESSEQUAL   -> shortcmp [Setle dl]
+            | GREATEREQUAL-> shortcmp [Setge dl]
             )
           | _ ->           (*if one or both operands in register*)
             let short codearr = env, codearr, sstack' in
-            let shorteq setop = short ([Cmp(x, y); Mov (L 0, edx)] @ setop @ [Mov (edx, y)]) in
+            let shortcmp setop = short ([Cmp(x, y); Mov (L 0, edx)] @ setop @ [Mov (edx, y)]) in
             (match i with
             | MUL         -> short [Mul(x, y)]
             | DIV         -> env, [Mov (y, eax); Cltd; Div x; Mov (eax, y)], sstack'
@@ -161,14 +173,14 @@ let rec sint env prg sstack =
             | ADD         -> short [Add(x, y)]
             | SUB         -> short [Sub(x, y)]
             | OR          -> short [OrBin(x, y); Mov (L 0, edx); Setne dl; Mov (edx, y)]
-            | AND         -> env, andcode, sstack'
-            | EQUAL       -> shorteq [Sete dl]
-            | NOTEQUAL    -> shorteq [Setne dl]
-            | LESS        -> shorteq [Setl dl]
-            | GREATER     -> shorteq [Setg dl]
-            | LESSEQUAL   -> shorteq [Setle dl]
-            | GREATEREQUAL-> shorteq [Setge dl]
-            )   
+            | AND         -> env, andop, sstack'
+            | EQUAL       -> shortcmp [Sete dl]
+            | NOTEQUAL    -> shortcmp [Setne dl]
+            | LESS        -> shortcmp [Setl dl]
+            | GREATER     -> shortcmp [Setg dl]
+            | LESSEQUAL   -> shortcmp [Setle dl]
+            | GREATEREQUAL-> shortcmp [Setge dl]
+            )
     in
     let env, code', sstack'' = sint env prg' sstack' in
     env, code @ code', sstack''

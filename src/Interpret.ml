@@ -34,19 +34,30 @@ module Stmt =
 
     open Stmt
 
-    (* State update primitive *) 
+    (* State update primitive *)
     let update st x v = fun y -> if y = x then v else st y
-      
+
     let rec eval stmt ((st, input, output) as conf) =
       match stmt with
-      | Skip          -> conf
-      | Assign (x, e) -> (update st x (Expr.eval e st), input, output)
-      | Read    x     ->
-        let z :: input' = input in
-        (update st x z, input', output)
-      | Write   e     -> (st, input, output @ [Expr.eval e st])
-      | Seq (s1, s2)  -> eval s1 conf |> eval s2
-
+      | Skip                  -> conf
+      | Assign (x, e)         -> (update st x (Expr.eval e st), input, output)
+      | Read    x             ->
+          let z :: input' = input in
+          (update st x z, input', output)
+      | Write   e             -> (st, input, output @ [Expr.eval e st])
+      | Seq (s1, s2)          -> eval s1 conf |> eval s2
+      | If  (exp, seq1, seq2) -> 
+          if (Expr.eval exp st) != 0 
+          then eval seq1 conf 
+          else eval seq2 conf
+      | While (exp, seq)      -> 
+          (*recursive loop function*)
+          let rec loop exp' seq' ((st', _, _) as conf') = 
+            if (Expr.eval exp' st') != 0 
+            then loop exp' seq' (eval seq' conf') 
+            else conf' 
+          in
+          loop exp seq conf
   end
 
 module Program =

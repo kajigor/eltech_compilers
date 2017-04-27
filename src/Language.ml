@@ -63,19 +63,26 @@ module Stmt =
     | Read   of string
     | Write  of Expr.t
     | Seq    of t * t
+    | If     of Expr.t * t * t
+    | While  of Expr.t * t
 
-    let expr_parser = Expr.expr_parser
+    let expr = Expr.expr_parser
 
     ostap (
-      simp: 
-        x:IDENT ":=" e:expr_parser        {Assign (x, e)}
-        | %"read" "(" x:IDENT ")"         {Read x}
-        | %"write" "(" e:expr_parser ")"  {Write e}
-        | %"skip"                         {Skip};
-          
-      parse: 
-        s:simp ";" d:parse                {Seq (s,d)}
-        | simp 
+      statement:
+        x:IDENT ":=" e:expr           {Assign (x, e)}
+        | %"read" "(" x:IDENT ")"     {Read x}
+        | %"write" "(" e:expr ")"     {Write e}
+        | %"skip"                     {Skip}
+        | %"if" exp:expr
+          "then" seq1:sequense
+          "else" seq2:sequense "fi"   {If(exp, seq1, seq2)}
+        | %"while" exp:expr 
+          "do" seq:sequense "od"      {While(exp, seq)};
+
+      sequense:
+        s:statement ";" d:sequense    {Seq (s,d)}
+        | statement 
     )
 
   end
@@ -85,7 +92,7 @@ module Program =
 
     type t = Stmt.t
 
-    let parse = Stmt.parse
+    let parse = Stmt.sequense
 
   end
 
