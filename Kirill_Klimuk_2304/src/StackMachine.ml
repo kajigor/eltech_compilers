@@ -41,9 +41,9 @@ module Interpret =
 	match prg with
 	| []        -> conf
 	| (JMP s) :: prg'-> run' (findLabelCode fullPrg s) (stack, st, input, output)
-	| (JZ s) :: prg' -> let x :: stack' = stack in 
+	| (JZ s)  :: prg' -> let x :: stack' = stack in 
 						if (x == 0) then run' (findLabelCode fullPrg s) (stack', st, input, output)
-									else run' prg' (stack', st, input, output)
+									else run' prg' (stack', st, input, output)							
 	| i :: prg' ->
             run' prg' (
             match i with
@@ -113,10 +113,17 @@ module Compile =
 							let endLbl = gen_label (Random.int(15)+1)  in 
 							Expr.compile e @ [JZ elseLbl] @ compile s1 @ [JMP endLbl] @
 							[LABEL elseLbl] @ compile s2 @ [LABEL endLbl]
-	| WhileDo (e, s) -> let startLbl = gen_label (Random.int(15)+1) in 
-						let endLbl = gen_label (Random.int(15)+1)  in 
-						[LABEL startLbl] @ Expr.compile e @ [JZ endLbl] @ 
-						compile s @ [JMP startLbl] @ [LABEL endLbl]
+	| WhileDo (e, s)     -> let startLbl = gen_label (Random.int(15)+1) in 
+							let endLbl = gen_label (Random.int(15)+1)  in 
+							[LABEL startLbl] @ Expr.compile e @ [JZ endLbl] @ 
+							compile s @ [JMP startLbl] @ [LABEL endLbl]					
+	| ForDo   (e,a,s) 	 -> let startLbl = gen_label (Random.int(15)+1) in 
+							let endLbl = gen_label (Random.int(15)+1)  in 
+							[LABEL startLbl] @ Expr.compile e @ [JZ endLbl] @ 
+							compile s @ compile a @[JMP startLbl] @ [LABEL endLbl]	
+	| RepeatUntil (s,e  )-> let startLbl = gen_label (Random.int(15)+1) in 
+							[LABEL startLbl] @ compile s @ Expr.compile e @ [JZ startLbl] 	
+						
       end
 
     module Program =

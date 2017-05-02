@@ -22,18 +22,19 @@ module Stmt =
 
     (* State update primitive *) 
     let update st x v = fun y -> if y = x then v else st y 
-      
+	
     let rec eval stmt ((st, input, output) as conf) =
       match stmt with
-      | Skip          -> conf
-      | Assign (x, e) -> (update st x (Expr.eval e st), input, output)
-      | Read    x     -> 
-	  let z :: input' = input in
-	  (update st x z, input', output)
-      | Write   e     -> (st, input, output @ [Expr.eval e st])
-      | Seq (s1, s2)  -> eval s1 conf |> eval s2 
-	  | IfElse (e, s1, s2) -> if (Expr.eval e st) == 1 then eval s1 conf else eval s2 conf
-	  | WhileDo (e, s) -> if (Expr.eval e st) == 1 then eval stmt (eval s conf) else conf
+      | Skip          		-> conf
+      | Assign  (x, e) 		-> (update st x (Expr.eval e st), input, output)
+      | Read     x          -> let z :: input' = input in
+							   (update st x z, input', output)
+      | Write    e          -> (st, input, output @ [Expr.eval e st])
+      | Seq     (s1, s2)    -> eval s1 conf |> eval s2 
+	  | IfElse  (e, s1, s2) -> if (Expr.eval e st) == 1 then eval s1 conf else eval s2 conf
+	  | WhileDo (e, s)      -> if (Expr.eval e st) == 1 then eval s conf |> eval stmt else conf
+	  | ForDo   (e, a, s)   -> if (Expr.eval e st) == 1 then eval s conf |> eval a |> eval stmt else conf
+	  | RepeatUntil (s,e)   -> eval s conf |> eval (WhileDo(Bin("==",e,Const 0),s))
   end
 
 module Program =

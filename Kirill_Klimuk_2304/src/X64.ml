@@ -140,9 +140,9 @@ let printInstr instr =
   | Push     x -> Printf.sprintf "pushq\t%s"      (printOp x)
   | Pop      x -> Printf.sprintf "popq\t%s"       (printOp x)
   | Call     f -> Printf.sprintf "call\t%s"  f
-  | Jmp      s -> Printf.sprintf "jmp\t%s" s
-  | Jz  	 s -> Printf.sprintf "jz\t%s"  s
-  | Lbl      s -> Printf.sprintf "\n%s:"   s
+  | Jmp      s -> Printf.sprintf "jmp\t%s"   s
+  | Jz  	 s -> Printf.sprintf "jz\t%s"    s
+  | Lbl      s -> Printf.sprintf "\n%s:"     s
   | Cqo 	   -> "cqto"
   | Ret        -> "ret"
 
