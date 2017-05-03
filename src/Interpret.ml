@@ -58,6 +58,16 @@ module Stmt =
             else conf' 
           in
           loop exp seq conf
+      | Until (seq, exp)      ->
+          (*recursive loop function*)
+          let rec loop exp' seq' conf' = 
+            let (newst, _, _) as newconf = eval seq' conf' in
+            if (Expr.eval exp' newst) == 0
+            then loop exp' seq' newconf
+            else newconf
+          in
+          loop exp seq conf
+
   end
 
 module Program =

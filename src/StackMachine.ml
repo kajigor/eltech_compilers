@@ -163,22 +163,28 @@ module Compile =
       let lbl1   = lblc#get_count-1 in
       let lbl2   = lblc#get_count in
       match op with
-      | If (exp, seq1, seq2) -> 
-          Expr.compile exp @ 
+      | If (exp, seq1, seq2) ->
+          Expr.compile exp @
           [CJMP (lbl1,"z")] @
-          compile lblc seq1 @ 
+          compile lblc seq1 @
           [JMP lbl2] @
-          [LBL lbl1] @ 
-          compile lblc seq2 @ 
-          [LBL lbl2]
-      | While (exp, seq)     -> 
-          [JMP lbl1] @
-          [LBL lbl2] @ 
-          compile lblc seq @ 
           [LBL lbl1] @
-          Expr.compile exp @ 
-          [CJMP (lbl2, "nz")]
+          compile lblc seq2 @
+          [LBL lbl2]
 
+      | While (exp, seq)     ->
+          [JMP lbl1] @
+          [LBL lbl2] @
+          compile lblc seq @
+          [LBL lbl1] @
+          Expr.compile exp @
+          [CJMP (lbl2, "nz")]
+          
+      | Until (seq, exp)     ->
+          [LBL lbl1] @
+          compile lblc seq @
+          Expr.compile exp @
+          [CJMP (lbl1, "z")]
     end
 
 

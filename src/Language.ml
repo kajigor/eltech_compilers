@@ -65,6 +65,7 @@ module Stmt =
     | Seq    of t * t
     | If     of Expr.t * t * t
     | While  of Expr.t * t
+    | Until  of t * Expr.t
 
     let expr = Expr.expr_parser
 
@@ -79,7 +80,9 @@ module Stmt =
         | %"while" exp:expr
           "do" seq:sequence %"od"      {While(exp, seq)}
         | %"for" s1:sequence "," e:expr "," s2:sequence
-          %"do" s:sequence %"od"       {Seq (s1, While (e, Seq (s, s2)))};
+          %"do" s:sequence %"od"       {Seq (s1, While (e, Seq (s, s2)))}
+        | %"repeat" seq:sequence 
+          "until" exp:expr             {Until (seq, exp)};
 
       elsePart: 
         %"else" sequence
