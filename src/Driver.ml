@@ -8,7 +8,7 @@ let parse filename =
   Util.parse
     (object
        inherit Matcher.t s
-       inherit Util.Lexers.ident ["read"; "write"; "skip"; "if"; "then"; "else"; "fi"; "while"; "do"; "od"] s
+       inherit Util.Lexers.ident ["read"; "write"; "skip"; "if"; "then"; "else"; "fi"; "while"; "do"; "od"; "for"; "elif"] s
        inherit Util.Lexers.decimal s
        inherit Util.Lexers.skip [
          Matcher.Skip.whitespaces " \t\n";
@@ -16,7 +16,7 @@ let parse filename =
    Matcher.Skip.nestedComment "(*" "*)"
        ] s
     end)
-    (ostap (!(Stmt.sequense) -EOF))
+    (ostap (!(Stmt.sequence) -EOF))
 
 let main =
   try

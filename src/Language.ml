@@ -74,15 +74,21 @@ module Stmt =
         | %"read" "(" x:IDENT ")"     {Read x}
         | %"write" "(" e:expr ")"     {Write e}
         | %"skip"                     {Skip}
-        | %"if" exp:expr
-          "then" seq1:sequense
-          "else" seq2:sequense "fi"   {If(exp, seq1, seq2)}
-        | %"while" exp:expr 
-          "do" seq:sequense "od"      {While(exp, seq)};
+        | %"if" exp:expr %"then" seq1:sequence seq2:elsePart?
+          %"fi"   {If(exp, seq1, match seq2 with None -> Skip | Some seq2 -> seq2)}
+        | %"while" exp:expr
+          "do" seq:sequence %"od"      {While(exp, seq)}
+        | %"for" s1:sequence "," e:expr "," s2:sequence
+          %"do" s:sequence %"od"       {Seq (s1, While (e, Seq (s, s2)))};
 
-      sequense:
-        s:statement ";" d:sequense    {Seq (s,d)}
-        | statement 
+      elsePart: 
+        %"else" sequence
+        | %"elif" exp:expr %"then" seq1:sequence seq2:elsePart?
+          {If(exp,seq1, match seq2 with None -> Skip | Some seq2 -> seq2)};
+
+      sequence:
+        s:statement ";" d:sequence    {Seq (s,d)}
+        | statement
     )
 
   end
@@ -92,7 +98,7 @@ module Program =
 
     type t = Stmt.t
 
-    let parse = Stmt.sequense
+    let parse = Stmt.sequence
 
   end
 

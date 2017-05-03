@@ -1,0 +1,5 @@
+read (x);
+if x == 1 then write (1)
+elif x == 2 then write (2)
+elif x == 3 then write (3)
+fi
