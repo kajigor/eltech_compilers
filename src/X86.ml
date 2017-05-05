@@ -128,7 +128,6 @@ let rec sint env prg sstack =
             env, [Push ebx; Call "lwrite"; Pop ebx], [] 
         | BINOP o ->
             let x::(y::_ as sstack') = sstack in
-               let transform_to_01 t = [Mov (t, eax); And (t, eax); Mov (L 0, eax); Set("ne", al)] in
              let getCommand x y = (match o with 
         |"*"  ->  [Mul (x, y)]
         |"+"  ->  [Add (x, y)]
