@@ -13,15 +13,15 @@ main:
 	movl	$6,	-8(%ebp)
 	movl	$7,	-12(%ebp)
 	movl	$8,	-16(%ebp)
-	movl	-12(%ebp),	%edx
-	addl	-16(%ebp),	%edx
-	movl	%edx,	-12(%ebp)
-	movl	-8(%ebp),	%edx
-	addl	-12(%ebp),	%edx
-	movl	%edx,	-8(%ebp)
-	movl	-4(%ebp),	%edx
-	addl	-8(%ebp),	%edx
-	movl	%edx,	-4(%ebp)
+	movl	-12(%ebp),	%eax
+	addl	-16(%ebp),	%eax
+	movl	%eax,	-12(%ebp)
+	movl	-8(%ebp),	%eax
+	addl	-12(%ebp),	%eax
+	movl	%eax,	-8(%ebp)
+	movl	-4(%ebp),	%eax
+	addl	-8(%ebp),	%eax
+	movl	%eax,	-4(%ebp)
 	addl	-4(%ebp),	%edi
 	addl	%edi,	%esi
 	addl	%esi,	%ecx

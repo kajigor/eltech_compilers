@@ -12,16 +12,16 @@ main:
 	movl	%eax,	x
 	call	lread
 	movl	%eax,	y
-	movl	x,	%ebx
-	movl	y,	%ecx
-	imull	%ecx,	%ebx
-	movl	$3,	%ecx
-	imull	%ecx,	%ebx
-	movl	%ebx,	z
-	movl	z,	%ebx
-	pushl	%ebx
+	movl	x,	%ecx
+	movl	y,	%esi
+	imull	%esi,	%ecx
+	movl	$3,	%esi
+	imull	%esi,	%ecx
+	movl	%ecx,	z
+	movl	z,	%ecx
+	pushl	%ecx
 	call	lwrite
-	popl	%ebx
+	popl	%eax
 	movl	%ebp,%esp
 	popl	%ebp
 	ret

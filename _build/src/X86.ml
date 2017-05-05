@@ -53,7 +53,7 @@ let to_string buf code =
       | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s"  (opnd x) (opnd y)
       | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (opnd x) (opnd y)
       | Sub (x,y)  -> Printf.sprintf "subl\t%s,\t%s"  (opnd x) (opnd y)
-      | Div  x  -> Printf.sprintf "idiv\t%s" 		(opnd x) 
+      | Div  x     -> Printf.sprintf "idiv\t%s" 		(opnd x) 
       | Dis (x,y)  -> Printf.sprintf "orl\t%s,\t%s" 	(opnd x) (opnd y)
       | Con (x,y)  -> Printf.sprintf "andl\t%s,\t%s"  (opnd x) (opnd y)
       | Set (o,x)  -> Printf.sprintf "set%s\t%s"     o       (opnd x)
@@ -89,6 +89,7 @@ class env =
     method get_locals  = S.elements locals
     method get_depth   = depth
   end
+  
    let save_opnd opnd f =
        [Push opnd] @ f @ [Pop opnd]
 
@@ -113,8 +114,11 @@ let rec sint env prg sstack =
         | LD x ->
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
-            env'', [Mov (M x, s)], s :: sstack
-  | ST x ->
+            	(match s with 
+            		|S _ ->  env'',save_opnd eax ([Mov(M x, eax);Mov (eax, s)]), s :: sstack
+            		| _ -> 	 env'', [Mov (M x, s)], s :: sstack
+        			)
+  | ST x -> 
             let env' = env#local x in
             let s :: sstack' = sstack in
             env', [Mov (s, M x)], sstack' 
@@ -124,6 +128,7 @@ let rec sint env prg sstack =
             env, [Push ebx; Call "lwrite"; Pop ebx], [] 
         | BINOP o ->
             let x::(y::_ as sstack') = sstack in
+               let transform_to_01 t = [Mov (t, eax); And (t, eax); Mov (L 0, eax); Set("ne", al)] in
              let getCommand x y = (match o with 
         |"*"  ->  [Mul (x, y)]
         |"+"  ->  [Add (x, y)]
@@ -141,7 +146,9 @@ let rec sint env prg sstack =
 
               )  in
          match x, y with
-          | S _, S _ -> env, [Mov (y, edx)] @ getCommand x edx @[Mov (edx, y)], sstack'
+          | S _, S _ -> env, [Mov (y, eax)]  @ getCommand x eax @ [Mov (eax, y)], sstack'
+         (* | M _, S _ -> env, [Mov (y, edx)]  @ getCommand x edx @ [Mov (edx, y)], sstack'
+          | S _, M _ -> env, [Mov (y, edx)] @ getCommand x edx @ [Mov (edx, y)], sstack'*)
           | _        -> env, getCommand x y, sstack'  
       in
       let env, code', sstack'' = sint env prg' sstack' in
