@@ -25,19 +25,25 @@ module Expr =
     fold_right ( * ) [x1; x2; x3; x4; ...; xk] y =  x1 * ... * (xk-1 * (xk * y)) ...)
     fold_left ( * ) y [x1; x2; x3; x4; ...; xk] = def =
     (..((((y * x1) * x2) * x3) * x4) ... xk)
+    camlp5/extension.html
+
+
+    match t with
+             |None ->h:expr3;
+             |Some h (op,y) 0> Binop(Ostap.Matcher.Token.repr op, h , y);
 *)
 
     
        ostap (
        	 parse: expr0;
-       	 expr0: h:expr1 t:(-"||" expr1)* {
+       	 expr0: h:expr1 t:(-"!!" expr1)* {
        	  List.fold_left(fun e op ->Binop( "||" , e, op)) h t};
 
        	 expr1: h:expr2 t:(-"&&" expr2)* {
        	  List.fold_left(fun e op ->Binop( "&&" , e, op)) h t};
 
     	 	 expr2: h:expr3 t:(("==" | "!=" | "<=" | "<" | ">=" | ">") expr3)* {
-           	 List.fold_left (fun e (op, y) -> Binop(Ostap.Matcher.Token.repr op, e, y)) h t};
+                List.fold_left (fun e (op, y) -> Binop(Ostap.Matcher.Token.repr op, e, y)) h t};
 
        	 expr3: h:expr4 t:(("+" | "-") expr4)* {
        	  List.fold_left (fun e (op, y) -> Binop(Ostap.Matcher.Token.repr op, e, y)) h t};

@@ -14,9 +14,10 @@ let nregs = Array.length regs - 3
 
 type instr =
 
+| Cltd
 | Add  of opnd * opnd
 | Mul  of opnd * opnd
-| Div  of opnd * opnd
+| Div  of opnd
 | Dis  of opnd * opnd
 | Con  of opnd * opnd
 | Mod  of opnd * opnd
@@ -30,6 +31,7 @@ type instr =
 | And  of opnd * opnd
 | Or   of opnd * opnd
 | Mov  of opnd * opnd
+| Xor  of opnd * opnd
 | Push of opnd
 | Pop  of opnd
 | Call of string
@@ -47,16 +49,18 @@ let to_string buf code =
 
     in
     function
-      | Add (x, y) -> Printf.sprintf "addl\t%s,%s"  (opnd x) (opnd y)
-      | Mul (x, y) -> Printf.sprintf "imull\t%s,%s" (opnd x) (opnd y)
-      | Sub (x,y)  -> Printf.sprintf "subl\t%s,%s" (opnd x) (opnd y)
-      | Div (x,y)  -> Printf.sprintf "idiv\t%s,%s" (opnd x) (opnd y)
-      | Dis (x,y)  -> Printf.sprintf "orl\t%s,%s" (opnd x) (opnd y)
-      | Con (x,y)  -> Printf.sprintf "andl\t%s,%s" (opnd x) (opnd y)
-      | Set (o,x)  -> Printf.sprintf "set%s\t%s"    o       (opnd x)
-      | Equ (x, y) -> Printf.sprintf "cmpl\t%s,%s"  (opnd x) (opnd y)
-      | Mov (x, y) -> Printf.sprintf "movl\t%s,%s"  (opnd x) (opnd y)
-      | Push x     -> Printf.sprintf "pushl\t%s" (opnd x)
+      | Cltd       -> Printf.sprintf "cltd\t"
+      | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s"  (opnd x) (opnd y)
+      | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (opnd x) (opnd y)
+      | Sub (x,y)  -> Printf.sprintf "subl\t%s,\t%s"  (opnd x) (opnd y)
+      | Div  x     -> Printf.sprintf "idiv\t%s" 		(opnd x) 
+      | Dis (x,y)  -> Printf.sprintf "orl\t%s,\t%s" 	(opnd x) (opnd y)
+      | Con (x,y)  -> Printf.sprintf "andl\t%s,\t%s"  (opnd x) (opnd y)
+      | Set (o,x)  -> Printf.sprintf "set%s\t%s"     o       (opnd x)
+      | Equ (x, y) -> Printf.sprintf "cmpl\t%s,\t%s"  (opnd x) (opnd y)
+      | Xor  (x,y) -> Printf.sprintf "xor\t%s,\t%s"   (opnd x) (opnd y)
+      | Mov (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (opnd x) (opnd y)
+      | Push x     -> Printf.sprintf "pushl\t%s" 	(opnd x)
       | Pop  x     -> Printf.sprintf "popl\t%s"     (opnd x)
       | Call x     -> Printf.sprintf "call\t%s"      x
       | Ret        -> "ret" 
@@ -76,7 +80,7 @@ class env =
     val depth  = 0
   
     method allocate = function
-      | []                          -> this, R 0
+      | []                          -> this, R 1
       | R i :: _ when i < nregs - 1 -> this, R (i+1)
       | S i :: _                    -> {< depth = max depth (i+1) >}, S (i+1)
       | _                           -> {< depth = max depth 1 >}, S 1 
@@ -85,8 +89,19 @@ class env =
     method get_locals  = S.elements locals
     method get_depth   = depth
   end
-   
+  
+   let save_opnd opnd f =
+       [Push opnd] @ f @ [Pop opnd]
 
+   let comprasion type_comp x y = 
+    	  [Xor(eax,eax);Equ(x,y); Set(type_comp,al);Mov(eax, y)]
+
+   let f_div x y instr = 
+   		  [Mov(y, eax);Cltd;Div(x)] @ instr
+
+
+  
+   
 let rec sint env prg sstack =
   match prg with
   | []        -> env, [], []
@@ -107,23 +122,23 @@ let rec sint env prg sstack =
         | READ  ->
             env, [Call "lread"], [eax]
         | WRITE ->
-            env, [Push eax; Call "lwrite"; Pop edx], [] 
+            env, [Push ebx; Call "lwrite"; Pop ebx], [] 
         | BINOP o ->
             let x::(y::_ as sstack') = sstack in
              let getCommand x y = (match o with 
         |"*"  ->  [Mul (x, y)]
         |"+"  ->  [Add (x, y)]
         |"-"  ->  [Sub (x, y)]
-        |"/"  ->  [Div (x, y)]
-        |"%"  ->  [Div(x,y); Mov(edx, eax)]
-        |"||" ->  [Dis(x,y); Mov(y, eax)]
-        |"&&" ->  [Con(x,y); Mov(y, eax)]
-        |"==" ->  [Equ(x,y); Set("e",al)]
-        |"!=" ->  [Equ(x,y); Set("le",al)]
-        |"<=" ->  [Equ(x,y); Set("ge",al)]
-        |">=" ->  [Equ(x,y); Set("ne",al)]
-        |"<"  ->  [Equ(x,y); Set("g",al)]
-        |">"  ->  [Equ(x,y); Set("n",al)]
+        |"/"  ->  save_opnd eax (f_div x y [Mov(eax, y)])
+        |"%"  ->  save_opnd edx (f_div x y [Mov(edx, y)])
+        |"||" ->  save_opnd eax (comprasion "ne" (L 0) y @  comprasion "ne" (L 0) x @ [Dis(x,y)])
+        |"&&" ->  save_opnd eax (comprasion "ne" (L 0) y @  comprasion "ne" (L 0) x @ [Con(x,y)])
+        |"==" ->  save_opnd eax (comprasion "e" x y)
+        |"!=" ->  save_opnd eax (comprasion "ne" x y)
+        |"<=" ->  save_opnd eax (comprasion "le" x y)
+        |">=" ->  save_opnd eax (comprasion "ge" x y)
+        |"<"  ->  save_opnd eax (comprasion "l" x y)
+        |">"  ->  save_opnd eax (comprasion "g" x y)
 
               )  in
          match x, y with

@@ -1,5 +1,0 @@
-skip;
-read (x0);
-read (x1);
-y := 12;
-write (y)

@@ -3,3 +3,5 @@
 /Driver.cmo
 /Expr.cmi
 /Expr.cmo
+/regression/*
+

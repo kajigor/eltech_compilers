@@ -8,28 +8,37 @@ main:
 	movl	%esp,%ebp
 	subl	$0,%esp
 	call	lread
-	movl	%eax,x
+	movl	%eax,	x
 	call	lread
-	movl	%eax,y
-	movl	x,%eax
-	movl	y,%ebx
-	subl	%ebx,%eax
-	pushl	%eax
+	movl	%eax,	y
+	movl	x,	%ebx
+	movl	y,	%ecx
+	subl	%ecx,	%ebx
+	pushl	%ebx
 	call	lwrite
-	popl	%edx
-	movl	x,%eax
-	movl	y,%ebx
-	idiv	%ebx,%eax
+	popl	%ebx
+	movl	x,	%ebx
+	movl	y,	%ecx
 	pushl	%eax
+	movl	%ebx,	%eax
+	cltd	
+	idiv	%ecx
+	movl	%eax,	%ebx
+	popl	%eax
+	pushl	%ebx
 	call	lwrite
+	popl	%ebx
+	movl	x,	%ebx
+	movl	y,	%ecx
+	pushl	%edx
+	movl	%ebx,	%eax
+	cltd	
+	idiv	%ecx
+	movl	%edx,	%ebx
 	popl	%edx
-	movl	x,%eax
-	movl	y,%ebx
-	idiv	%ebx,%eax
-	movl	%edx,%eax
-	pushl	%eax
+	pushl	%ebx
 	call	lwrite
-	popl	%edx
+	popl	%ebx
 	movl	%ebp,%esp
 	popl	%ebp
 	ret

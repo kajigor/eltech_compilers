@@ -9,19 +9,19 @@ main:
 	movl	%esp,%ebp
 	subl	$0,%esp
 	call	lread
-	movl	%eax,x
+	movl	%eax,	x
 	call	lread
-	movl	%eax,y
-	movl	y,%eax
-	movl	y,%ebx
-	imull	%ebx,%eax
-	movl	%eax,z
-	movl	x,%eax
-	movl	z,%ebx
-	addl	%ebx,%eax
-	pushl	%eax
+	movl	%eax,	y
+	movl	y,	%ebx
+	movl	y,	%ecx
+	imull	%ecx,	%ebx
+	movl	%ebx,	z
+	movl	x,	%ebx
+	movl	z,	%ecx
+	addl	%ecx,	%ebx
+	pushl	%ebx
 	call	lwrite
-	popl	%edx
+	popl	%ebx
 	movl	%ebp,%esp
 	popl	%ebp
 	ret
