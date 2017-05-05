@@ -44,8 +44,8 @@ module Stmt =
       | Skip          -> conf
       | Assign (x, e) -> (update st x (Expr.eval e st), input, output)
       | Read    x     -> 
-	  let z :: input' = input in
-	  (update st x z, input', output)
+	  let z :: input' = input in 
+          (update st x z, input', output)
       | Write   e     -> (st, input, output @ [Expr.eval e st])
       | Seq (s1, s2)  -> eval s1 conf |> eval s2 
 
