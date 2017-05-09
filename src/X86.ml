@@ -6,6 +6,7 @@ type opnd = R of int | S of int | L of int | M of string
 let regs  = [|"%eax"; "%ebx"; "%ecx"; "%esi"; "%edi"; "%edx"; "%esp"; "%ebp"|]
 let nregs = Array.length regs - 3
 
+
 let [|eax; ebx; ecx; esi; edi; edx; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
 
 
@@ -32,6 +33,9 @@ type instr =
 | Movzbl
 | Ret
 | Call of string
+| Lbl    of string
+| Goto   of string
+| Ifgoto of string * string
 
 let to_string buf code =      
   let instr =
@@ -72,6 +76,10 @@ let to_string buf code =
       | Cdq          -> "\tcdq"
       | Ret          -> "\tret"
       | Call p       -> Printf.sprintf "\tcall\t%s" p 
+
+      | Lbl s         -> Printf.sprintf "label%s:" s
+      | Goto s        -> Printf.sprintf "\tjmp\tlabel%s" s
+      | Ifgoto (e, s) -> Printf.sprintf "\tj%s\tlabel%s" e s
   in
   let out s = 
     Buffer.add_string buf "\t"; 
@@ -128,6 +136,13 @@ let rec sint env prg sstack =
             env, [Call "lread"], [eax]
         | WRITE ->
             env, [Push (R 1); Call "lwrite"; Pop (R 1)], [] 
+        | LABEL lbl ->
+                  (env, [Lbl lbl], sstack)
+        | GOTO lbl ->
+                  (env, [Goto lbl], sstack)
+        | IFGOTO (e, lbl) ->
+                  let y::stack' = sstack in
+                  (env, [Cmp (L 0, y); Ifgoto (e, lbl)], stack')
         | BINOP op ->
             let x::(y::_ as sstack') = sstack in
             env, (match op with
