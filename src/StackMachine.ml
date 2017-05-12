@@ -51,11 +51,11 @@ module Interpret =
               (z :: stack, st, input', output, ip + 1)
             | WRITE -> let z :: stack' = stack in
               (stack', st, input, output @ [z], ip + 1)
-	        | PUSH n -> (n :: stack, st, input, output, ip + 1)
+	    | PUSH n -> (n :: stack, st, input, output, ip + 1)
             | LD   x -> (st x :: stack, st, input, output, ip + 1)
-	        | ST   x -> let z :: stack' = stack in
+	    | ST   x -> let z :: stack' = stack in
               (stack', update st x z, input, output, ip + 1)
-	        | BINOP op ->
+	    | BINOP op ->
 		      let y::x::stack' = stack in
               ((apply op x y)::stack', st, input, output, ip + 1)
             | LABEL lbl ->
@@ -111,6 +111,7 @@ module Compile =
        let lbl2 = create_new_lbl () in
        Expr.compile e
        @ [IFGOTO ("z", lbl1)]
+	(*if e == false goto, lbl1 -- false, s2 -- false body*)
        @ compile s1
        @ [GOTO lbl2; LABEL lbl1]
        @ compile s2

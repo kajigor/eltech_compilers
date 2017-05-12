@@ -128,7 +128,7 @@ let rec sint env prg sstack =
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
             env'', (wrap_mem_access (M x) s @@ fun x y -> [Mov (x, y)]), s :: sstack
-	    | ST x ->
+	| ST x ->
             let env' = env#local x in
             let s :: sstack' = sstack in
             env', [Mov (s, M x)], sstack' 
