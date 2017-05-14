@@ -4,18 +4,34 @@ open Instr
 type opnd = R of int | S of int | L of int | M of string
 
 let regs  = [|"%eax"; "%ebx"; "%ecx"; "%esi"; "%edi"; "%edx"; "%esp"; "%ebp"|]
+
 let nregs = Array.length regs - 3
 
 let [|eax; ebx; ecx; esi; edi; edx; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
 
 type instr =
-| Add  of opnd * opnd
-| Mul  of opnd * opnd
-| Mov  of opnd * opnd
-| Push of opnd
-| Pop  of opnd
-| Call of string
+| Add   of opnd * opnd
+| Mul   of opnd * opnd
+| Sub	  of opnd * opnd
+| Div	  of opnd * opnd
+| Or	  of opnd * opnd
+| And	  of opnd * opnd
+| Sete
+| Setne
+| Setle
+| Setge
+| Setl
+| Setg
+| Cmp   of opnd * opnd
+| Mov   of opnd * opnd
+| Push  of opnd
+| Pop   of opnd
+| Call  of string
 | Ret
+| Xor   of opnd * opnd
+| Movzbl
+| Cdq
+
 
 let to_string buf code =      
   let instr =
@@ -28,11 +44,32 @@ let to_string buf code =
     function
       | Add (x, y) -> Printf.sprintf "addl\t%s,%s"  (opnd x) (opnd y)
       | Mul (x, y) -> Printf.sprintf "imull\t%s,%s" (opnd x) (opnd y)
+      | Sub (x, y) -> Printf.sprintf "subl\t%s,%s"  (opnd x) (opnd y)
+      | Div (x, y) -> Printf.sprintf "idivl\t%s"    (opnd x)
+      
+      | Cmp (x, y) -> Printf.sprintf "cmp\t%s,\t%s"   (opnd x) (opnd y)
+      | Setl       -> "setl\t%al"
+      | Setle      -> "setle\t%al"
+      | Setg       -> "setg\t%al"
+      | Setge      -> "setge\t%al"
+      | Sete       -> "sete\t%al"
+      | Setne      -> "setne\t%al"
+      
+      | Xor (x, y) -> Printf.sprintf "xorl\t%s,\t%s"  (opnd x) (opnd y)
+      
+      | Or (x, y)  -> Printf.sprintf "orl\t%s,%s"    (opnd x) (opnd y)
+      | And (x, y) -> Printf.sprintf "andl\t%s,%s"   (opnd x) (opnd y)
+
       | Mov (x, y) -> Printf.sprintf "movl\t%s,%s"  (opnd x) (opnd y)
       | Push x     -> Printf.sprintf "pushl\t%s"    (opnd x)
       | Pop  x     -> Printf.sprintf "popl\t%s"     (opnd x)
       | Call x     -> Printf.sprintf "call\t%s"      x
-      | Ret        -> "ret" 
+    
+      | Movzbl     -> "movzbl\t%al,\t%edx"
+      | Cdq        -> "cdq"
+      
+      | Ret        -> "ret"
+
   in
   let out s = 
     Buffer.add_string buf "\t"; 
@@ -58,42 +95,55 @@ class env =
     method get_locals  = S.elements locals
     method get_depth   = depth
   end
+  
+let comparator x y cmp =
+  [Cmp (x, y); cmp; Movzbl]
     
 let rec sint env prg sstack =
   match prg with
   | []        -> env, [], []
   | i :: prg' ->
       let env, code, sstack' = 
-	match i with
-	| PUSH n ->  
+        match i with
+        | PUSH n ->  
             let env', s = env#allocate sstack in
             env', [Mov (L n, s)], s :: sstack
         | LD x ->
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
             env'', [Mov (M x, s)], s :: sstack
-	| ST x ->
+        | ST x ->
             let env' = env#local x in
             let s :: sstack' = sstack in
             env', [Mov (s, M x)], sstack' 
-        | READ  ->
-            env, [Call "lread"], [eax]
-        | WRITE ->
-            env, [Push eax; Call "lwrite"; Pop edx], [] 
+        | READ  ->  env, [Call "lread"], [eax]
+        | WRITE ->  env, [Push eax; Call "lwrite"; Pop edx], [] 
         | _ ->
             let x::(y::_ as sstack') = sstack in
             (fun op ->
-              match x, y with
-              | S _, S _ -> env, [Mov (y, edx); op x edx; Mov (edx, y)], sstack'
-              | _        -> env, [op x y], sstack'   
+              env, [Mov (y, edx)] @ op x edx @ [ Mov (edx, y)], sstack'
             )
-              (match i with 
-	      | MUL -> fun x y -> Mul (x, y)
-	      | ADD -> fun x y -> Add (x, y)
-              )
+            (match i with
+            | ADD -> fun x y -> [Add (x, y)]
+            | MUL -> fun x y -> [Mul (x, y)]
+            | SUB -> fun x y -> [Sub (x, y)]
+            | DIV -> fun x y -> [Mov (y, eax); Cdq; Div (x, y); Mov (eax, edx)]
+            | MOD -> fun x y -> [Mov (y, eax); Cdq; Div (x, y);]
+             
+            | LESS  -> fun x y -> comparator x y Setl
+            | LEQL  -> fun x y -> comparator x y Setle
+            | MORE  -> fun x y -> comparator x y Setg
+            | MEQL  -> fun x y -> comparator x y Setge
+            | EQL  -> fun x y -> comparator x y Sete
+            | NEQL -> fun x y -> comparator x y Setne
+            
+            | AND -> fun x y -> [Xor (eax, eax); Cmp (y, eax); Setne; Mov (x, edx); Mul (eax, edx); Xor(eax, eax); Cmp(edx, eax); Setne; Mov (eax, y)]
+            | OR  -> fun x y -> [Xor (eax, eax); Or (x, y); Cmp (y, eax); Setne; Mov (eax, y)]
+            )
       in
       let env, code', sstack'' = sint env prg' sstack' in
       env, code @ code', sstack''
+	
 	
 let compile p = 
   let env, code, [] = sint (new env) (Compile.Program.compile p) [] in
@@ -111,6 +161,7 @@ let compile p =
   to_string buf code;
   out "\tmovl\t%ebp,%esp\n";
   out "\tpopl\t%ebp\n";
+  out "\txorl\t%eax,%eax\n";
   out "\tret\n";
   Buffer.contents buf
     

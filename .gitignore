@@ -1,5 +1,11 @@
-/Driver
-/Driver.cmi
-/Driver.cmo
-/Expr.cmi
-/Expr.cmo
+/rc.byte
+/rc.native
+
+/_build/*
+/_tags/*
+
+/runtime/*
+
+/regression/
+
+*.todo
