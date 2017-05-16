@@ -28,6 +28,11 @@ type instr =
 | Setg    of string
 | Setle   of string
 | Setge   of string
+| Lbl     of int
+| Jz      of int
+| Jnz     of int
+| Jmp     of int
+| Test    of opnd * opnd
 
 let to_string buf code =      
   let instr =
@@ -57,6 +62,11 @@ let to_string buf code =
       | Setg x        -> Printf.sprintf "setg\t%s"     x
       | Setle x       -> Printf.sprintf "setle\t%s"    x
       | Setge x       -> Printf.sprintf "setge\t%s"    x
+	  | Lbl x         -> Printf.sprintf "lbl%d:"       x
+      | Jz x          -> Printf.sprintf "jz\t\tlbl%d"    x
+      | Jnz x         -> Printf.sprintf "jnz\t\tlbl%d"   x
+      | Jmp x         -> Printf.sprintf "jmp\t\tlbl%d"   x
+      | Test (x, y)   -> Printf.sprintf "testl\t%s,%s" (opnd x) (opnd y)
   in
   let out s = 
     Buffer.add_string buf "\t"; 
@@ -112,6 +122,15 @@ let rec sint env prg sstack =
             env, [Call "lread"], [eax]
         | WRITE ->
             env, [Push eax; Call "lwrite"; Pop edx], [] 
+			| LBL x -> env, [Lbl x], []
+		| JMP x -> env, [Jmp x], []
+
+		| CJMP (x,c) -> 
+			let s :: sstack' = sstack in
+			let jmpop = (match c with "z"  -> Jz x | "nz" -> Jnz x) in
+			(match s with
+			| S _ ->  env, [Mov (s, edx); Test (edx, edx); jmpop], []
+			| _   ->  env, [Test (s, s); jmpop], [])
         | _ ->
             let x::(y::_ as sstack') = sstack in
             (match x, y with

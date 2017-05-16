@@ -45,6 +45,25 @@ module Stmt =
 	  (update st x z, input', output)
       | Write   e     -> (st, input, output @ [Expr.eval e st])
       | Seq (s1, s2)  -> eval s1 conf |> eval s2 
+	  | If  (exp, seq1, seq2) -> 
+          if (Expr.eval exp st) != 0 
+          then eval seq1 conf 
+          else eval seq2 conf
+      | While (exp, seq)      -> 
+          let rec loop exp' seq' ((st', _, _) as conf') = 
+            if (Expr.eval exp' st') != 0 
+            then loop exp' seq' (eval seq' conf') 
+            else conf' 
+          in
+          loop exp seq conf
+      | Until (seq, exp)      ->
+          let rec loop exp' seq' conf' = 
+            let (newst, _, _) as newconf = eval seq' conf' in
+            if (Expr.eval exp' newst) == 0
+            then loop exp' seq' newconf
+            else newconf
+          in
+          loop exp seq conf
 
   end
 

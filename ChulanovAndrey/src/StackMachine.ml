@@ -21,6 +21,9 @@ module Instr =
       | MORE
       | LESSEQUAL
       | MOREEQUAL
+	  | LBL  of int
+      | CJMP of int * string
+      | JMP  of int
 
   end
 
@@ -36,6 +39,11 @@ module Interpret =
 
     open Instr
     open Interpret.Stmt
+	
+	let rec findlbl prg lbl =
+      let h :: prg' = prg in
+      if h = lbl then prg' 
+      else findlbl prg' lbl
 
     let run prg input =
       let rec run' prg ((stack, st, input, output) as conf) =
@@ -52,6 +60,14 @@ module Interpret =
             | LD   x -> (st x :: stack, st, input, output)
 			| ST   x -> let z :: stack' = stack in
               (stack', update st x z, input, output)
+			| LBL  m     -> (prg', stack, st, input, output)
+            | JMP  m     -> (findlbl prg_full (LBL m), stack, st, input, output)
+            | CJMP (m,c) -> let h :: stack' = stack in
+                          if (match c with 
+                            | "z"  -> (h = 0) 
+                            | "nz" -> (h != 0)) 
+                          then (findlbl prg_full (LBL m), stack', st, input, output)
+                          else (prg', stack', st, input, output)
 			| _ -> let y :: x :: stack' = stack in
               ((match i with 
 			  | ADD -> (+) 
@@ -110,26 +126,62 @@ module Compile =
     | LessEqual (x, y)  -> (compile x) @ (compile y) [LESSEQUAL] 
     | MoreEqual (x, y)  -> (compile x) @ (compile y) [MOREEQUAL] 
 
-      end
+    end
+	  
+	  
+	class lblcounter =
+    object (this)
+      val mutable count  = 0
+      method add_lbls n  = count <- (count + n)
+      method get_count   = count
+    end
 
     module Stmt =
       struct
 
 	open Language.Stmt
 
-	let rec compile = function
-	| Skip          -> []
-	| Assign (x, e) -> Expr.compile e @ [ST x]
-	| Read    x     -> [READ; ST x]
-	| Write   e     -> Expr.compile e @ [WRITE]
-	| Seq    (l, r) -> compile l @ compile r
+	let rec compile lblc = function
+    | Skip                  -> []
+    | Assign (x, e)         -> Expr.compile e @ [ST x]
+    | Read    x             -> [READ; ST x]
+    | Write   e             -> Expr.compile e @ [WRITE]
+    | Seq    (l, r)         -> compile lblc l @ compile lblc r
+    | op ->
+      lblc#add_lbls 2;
+      let lbl1   = lblc#get_count-1 in
+      let lbl2   = lblc#get_count in
+      match op with
+      | If (exp, seq1, seq2) ->
+          Expr.compile exp @
+          [CJMP (lbl1,"z")] @
+          compile lblc seq1 @
+          [JMP lbl2] @
+          [LBL lbl1] @
+          compile lblc seq2 @
+          [LBL lbl2]
+
+      | While (exp, seq)     ->
+          [JMP lbl1] @
+          [LBL lbl2] @
+          compile lblc seq @
+          [LBL lbl1] @
+          Expr.compile exp @
+          [CJMP (lbl2, "nz")]
+          
+      | Until (seq, exp)     ->
+          [LBL lbl1] @
+          compile lblc seq @
+          Expr.compile exp @
+          [CJMP (lbl1, "z")]
+    end
 
       end
 
     module Program =
       struct
 
-	let compile = Stmt.compile
+	  let compile = Stmt.compile (new lblcounter)
 
       end
 

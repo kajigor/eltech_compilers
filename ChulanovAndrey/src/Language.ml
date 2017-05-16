@@ -33,6 +33,9 @@ module Stmt =
     | Read   of string
     | Write  of Expr.t
     | Seq    of t * t with show
+	| If     of Expr.t * t * t
+    | While  of Expr.t * t
+    | Until  of t * Expr.t
 
   end
 
