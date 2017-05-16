@@ -40,6 +40,19 @@ ostap (
       | %"read" "(" x:IDENT ")" {Read x}
       | %"write" "(" e:expr_parse ")" {Write e}
       | %"skip"                 {Skip};
+	  | %"if" exp:expr_parse %"then" seq1:sequence seq2:elsePart?
+          %"fi"   {If(exp, seq1, match seq2 with None -> Skip | Some seq2 -> seq2)}
+      | %"while" exp:expr_parse
+          "do" seq:sequence %"od"      {While(exp, seq)}
+      | %"for" s1:sequence "," e:expr_parse "," s2:sequence
+          %"do" s:sequence %"od"       {Seq (s1, While (e, Seq (s, s2)))}
+      | %"repeat" seq:sequence 
+          "until" exp:expr_parse             {Until (seq, exp)};
+		  
+  elsePart: 
+      %"else" sequence
+      | %"elif" exp:expr %"then" seq1:sequence seq2:elsePart?
+          {If(exp,seq1, match seq2 with None -> Skip | Some seq2 -> seq2)};
       
   stmt: s:simp ";" d:stmt {Seq (s,d)}
       | simp 
@@ -50,7 +63,7 @@ let parse filename =
   Util.parse 
     (object 
        inherit Matcher.t s 
-       inherit Util.Lexers.ident ["read"; "write"; "skip"] s
+       inherit Util.Lexers.ident ["read"; "write"; "skip"; "if"; "then"; "else"; "fi"; "while"; "do"; "od"; "for"; "elif"; "repeat"; "until"] s
        inherit Util.Lexers.decimal s
        inherit Util.Lexers.skip [
          Matcher.Skip.whitespaces " \t\n"
