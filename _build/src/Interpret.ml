@@ -47,8 +47,8 @@ module Stmt =
           (update st x z, input', output)
       | Write   e     -> (st, input, output @ [Expr.eval e st])
       | Seq (s1, s2)  -> eval s1 conf |> eval s2 
-    | If (e, s1, s2) -> if (Expr.eval e st) != 0 then eval s1 conf  else eval s2 conf
-    | While (e, s,b)   -> if (match b with
+      | If (e, s1, s2) -> if (Expr.eval e st) != 0 then eval s1 conf  else eval s2 conf
+      | While (e, s,b) -> if (match b with
                           | true ->  (Expr.eval e st) != 0
                           | false -> (Expr.eval e st) = 0
                         )

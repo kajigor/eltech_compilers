@@ -85,7 +85,7 @@ module Stmt =
       | %"if" e:expr "then" s1:parse "fi"                        {If(e,s1,Skip)}
       | %"while"  e: expr "do"     s:  parse "od"                {While (e,s,true)}
       | %"for" x:parse "," e:expr "," x1:parse %"do" s:parse %"od"  {Seq(x , While(e, Seq(s,x1), true))}
-      | %"repeat" s:parse %"until" e:expr                           {Seq(s, While(e, s, false) ) }; 
+      | %"repeat" s:parse %"until" e:expr                           {Seq(s,  While(e, s, false) ) }; 
       parse: s:simp ";" d:parse {Seq (s,d)} | simp 
     )
 

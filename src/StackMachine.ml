@@ -40,14 +40,14 @@ module Interpret =
       |"/" ->  x /  y
       |"%" ->  x mod  y
       |"-" ->  x -  y
-      |"&&"-> if (x == 1) && (y == 1) then 1 else 0
-      |"||" ->  if ( x == 1) || (y == 1) then 1 else 0
-      |"==" ->  if ( x) == ( y) then 1 else 0
-      |"!=" -> if ( x) != ( y) then 1 else 0
-      |"<"  -> if ( x) < ( y) then 1 else 0
-      |">"  -> if ( x) > ( y) then 1 else 0
-      |"<=" -> if ( x) <= ( y) then 1 else 0
-      |">=" -> if ( x) >= ( y) then 1 else 0
+      |"&&"-> if ((x == 0) || (y == 0)) then 0 else 1
+      |"||" ->  if (( x == 0) && (y == 0)) then 0 else 1
+      |"==" ->  if ( x==  y) then 1 else 0
+      |"!=" -> if ( x !=  y) then 1 else 0
+      |"<"  -> if ( x <  y) then 1 else 0
+      |">"  -> if ( x >  y) then 1 else 0
+      |"<=" -> if ( x <=  y) then 1 else 0
+      |">=" -> if ( x >=  y) then 1 else 0
 
 
    let run prg input =
