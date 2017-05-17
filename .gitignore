@@ -3,3 +3,8 @@
 /Driver.cmo
 /Expr.cmi
 /Expr.cmo
+/regression/*
+/_build/*
+/MyTest/*
+/runtime/*
+
