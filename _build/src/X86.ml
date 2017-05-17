@@ -32,6 +32,9 @@ type instr =
 | Or   of opnd * opnd
 | Mov  of opnd * opnd
 | Xor  of opnd * opnd
+| Label of int
+| Jmp of int
+| Jcc of string * int
 | Push of opnd
 | Pop  of opnd
 | Call of string
@@ -53,16 +56,19 @@ let to_string buf code =
       | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s"  (opnd x) (opnd y)
       | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (opnd x) (opnd y)
       | Sub (x,y)  -> Printf.sprintf "subl\t%s,\t%s"  (opnd x) (opnd y)
-      | Div  x     -> Printf.sprintf "idiv\t%s" 		(opnd x) 
-      | Dis (x,y)  -> Printf.sprintf "orl\t%s,\t%s" 	(opnd x) (opnd y)
+      | Div  x     -> Printf.sprintf "idiv\t%s"     (opnd x) 
+      | Dis (x,y)  -> Printf.sprintf "orl\t%s,\t%s"   (opnd x) (opnd y)
       | Con (x,y)  -> Printf.sprintf "andl\t%s,\t%s"  (opnd x) (opnd y)
-      | Set (o,x)  -> Printf.sprintf "set%s\t%s"     o       (opnd x)
+      | Set (s,x)  -> Printf.sprintf "set%s\t%s"     s      (opnd x)
       | Equ (x, y) -> Printf.sprintf "cmpl\t%s,\t%s"  (opnd x) (opnd y)
       | Xor  (x,y) -> Printf.sprintf "xor\t%s,\t%s"   (opnd x) (opnd y)
       | Mov (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (opnd x) (opnd y)
-      | Push x     -> Printf.sprintf "pushl\t%s" 	(opnd x)
+      | Push x     -> Printf.sprintf "pushl\t%s"  (opnd x)
       | Pop  x     -> Printf.sprintf "popl\t%s"     (opnd x)
       | Call x     -> Printf.sprintf "call\t%s"      x
+      | Label n    -> Printf.sprintf "label%i:" n
+      | Jmp n      -> Printf.sprintf "jmp\tlabel%i"   n
+      | Jcc  (s,n)    -> Printf.sprintf "j%s\tlabel%i"  s  n
       | Ret        -> "ret" 
   in
   let out s = 
@@ -82,7 +88,7 @@ class env =
     method allocate = function
       | []                          -> this, R 1
       | R i :: _ when i < nregs - 1 -> this, R (i+1)
-      | S i :: _                    -> {< depth = max depth (i+1) >}, S (i+1)
+      | S i :: _                    ->  {< depth = max depth (i+1) >}, S (i+1)
       | _                           -> {< depth = max depth 1 >}, S 1 
       
     method local     x = {< locals = S.add x locals >}
@@ -94,10 +100,10 @@ class env =
        [Push opnd] @ f @ [Pop opnd]
 
    let comprasion type_comp x y = 
-    	  [Xor(eax,eax);Equ(x,y); Set(type_comp,al);Mov(eax, y)]
+        [Xor(eax,eax);Equ(x,y); Set(type_comp,al);Mov(eax, y)]
 
    let f_div x y instr = 
-   		  [Mov(y, eax);Cltd;Div(x)] @ instr
+        [Mov(y, eax);Cltd;Push(esi);Mov(x,esi);Div(esi);Mov(esi,x);Pop(esi)] @ instr
 
 
   
@@ -108,16 +114,17 @@ let rec sint env prg sstack =
   | i :: prg' ->
       let env, code, sstack' = 
   match i with
+
   | PUSH n ->  
             let env', s = env#allocate sstack in
             env', [Mov (L n, s)], s :: sstack
         | LD x ->
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
-            	(match s with 
-            		|S _ ->  env'',save_opnd eax ([Mov(M x, eax);Mov (eax, s)]), s :: sstack
-            		| _ -> 	 env'', [Mov (M x, s)], s :: sstack
-        			)
+              (match s with 
+                |S _ ->  env'',  [Mov(M x, edx);Mov (edx, s)], s :: sstack
+                | _ ->   env'', [Mov (M x, s)], s :: sstack
+              )
   | ST x -> 
             let env' = env#local x in
             let s :: sstack' = sstack in
@@ -126,9 +133,18 @@ let rec sint env prg sstack =
             env, [Call "lread"], [eax]
         | WRITE ->
             env, [Push ebx; Call "lwrite"; Pop ebx], [] 
+        | LABEL  n -> 
+            (env, [Label(n)] , sstack)
+        | JMP  n -> 
+            (env, [Jmp(n)] , sstack)
+        | CHECKJMP(n, b) ->
+             let y::sstack' = sstack in
+             (env, [Xor(eax,eax);Equ(L 0, y);
+              (match b with
+               | true ->  Jcc("e",n)
+               | false -> Jcc("ne", n))], sstack')
         | BINOP o ->
             let x::(y::_ as sstack') = sstack in
-               let transform_to_01 t = [Mov (t, eax); And (t, eax); Mov (L 0, eax); Set("ne", al)] in
              let getCommand x y = (match o with 
         |"*"  ->  [Mul (x, y)]
         |"+"  ->  [Add (x, y)]
@@ -146,9 +162,7 @@ let rec sint env prg sstack =
 
               )  in
          match x, y with
-          | S _, S _ -> env, [Mov (y, eax)]  @ getCommand x eax @ [Mov (eax, y)], sstack'
-         (* | M _, S _ -> env, [Mov (y, edx)]  @ getCommand x edx @ [Mov (edx, y)], sstack'
-          | S _, M _ -> env, [Mov (y, edx)] @ getCommand x edx @ [Mov (edx, y)], sstack'*)
+          | S _, S _ -> env, [Mov (y, edx)]  @ getCommand x edx @ [Mov (edx, y)], sstack'
           | _        -> env, getCommand x y, sstack'  
       in
       let env, code', sstack'' = sint env prg' sstack' in

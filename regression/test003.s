@@ -22,7 +22,11 @@ main:
 	pushl	%eax
 	movl	%ebx,	%eax
 	cltd	
-	idiv	%ecx
+	pushl	%esi
+	movl	%ecx,	%esi
+	idiv	%esi
+	movl	%esi,	%ecx
+	popl	%esi
 	movl	%eax,	%ebx
 	popl	%eax
 	pushl	%ebx
@@ -33,7 +37,11 @@ main:
 	pushl	%edx
 	movl	%ebx,	%eax
 	cltd	
-	idiv	%ecx
+	pushl	%esi
+	movl	%ecx,	%esi
+	idiv	%esi
+	movl	%esi,	%ecx
+	popl	%esi
 	movl	%edx,	%ebx
 	popl	%edx
 	pushl	%ebx

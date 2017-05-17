@@ -18,8 +18,8 @@ module Expr =
                                 |"/" -> eval' x / eval' y
                                 |"%" -> eval' x mod eval' y
                                 |"-" -> eval' x - eval' y
-                                |"&&"-> if ((eval' x) == 0) && ((eval' y) == 0) then 0 else 1
-                                |"||" -> if ((eval' x) == 0) || ((eval' y) == 0) then 0 else 1
+                                |"&&"-> if  ((eval' x) != 0) && ((eval' y) != 0) then 1 else 0
+                                |"||" -> if ((eval' x) != 0) || ((eval' y) != 0) then 1 else 0
                                 |"==" -> if (eval' x) == (eval' y) then 1 else 0
                                 |"!=" -> if (eval' x) != (eval' y) then 1 else 0
                                 |"<"  -> if (eval' x) < (eval' y) then 1 else 0
@@ -43,11 +43,16 @@ module Stmt =
       match stmt with
       | Skip          -> conf
       | Assign (x, e) -> (update st x (Expr.eval e st), input, output)
-      | Read    x     -> 
-	  let z :: input' = input in 
+      | Read    x     -> let z :: input' = input in 
           (update st x z, input', output)
       | Write   e     -> (st, input, output @ [Expr.eval e st])
       | Seq (s1, s2)  -> eval s1 conf |> eval s2 
+      | If (e, s1, s2) -> if (Expr.eval e st) != 0 then eval s1 conf  else eval s2 conf
+      | While (e, s,b) -> if (match b with
+                          | true ->  (Expr.eval e st) != 0
+                          | false -> (Expr.eval e st) = 0
+                        )
+                        then eval stmt (eval s conf)  else conf
 
   end
 

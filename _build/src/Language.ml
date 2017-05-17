@@ -65,19 +65,27 @@ module Stmt =
 
     type t =
     | Skip
-    | Assign of string * Expr.t
-    | Read   of string
-    | Write  of Expr.t
-    | Seq    of t * t
+    | Assign  of string * Expr.t
+    | Read    of string
+    | Write   of Expr.t
+    | Seq     of t * t
+    | If  of Expr.t * t * t
+    | While of Expr.t * t * bool
+
+
 
     let expr = Expr.parse
 
     ostap (
-      simp: x:IDENT ":=" e:expr  {Assign (x, e)}
-      | %"read"  "(" x:IDENT ")" {Read x}
-      | %"write" "(" e:expr  ")" {Write e}
-      | %"skip"                  {Skip};
-      
+      simp: x:IDENT ":=" e:expr                                  {Assign (x, e)}
+      | %"read"  "(" x:IDENT ")"                                 {Read x}
+      | %"write" "(" e:expr  ")"                                 {Write e}
+      | %"skip"                                                  {Skip}
+      | %"if" e:expr "then" s1:parse "else" s2:parse "fi"        {If(e,s1,s2)}
+      | %"if" e:expr "then" s1:parse "fi"                        {If(e,s1,Skip)}
+      | %"while"  e: expr "do"     s:  parse "od"                {While (e,s,true)}
+      | %"for" x:parse "," e:expr "," x1:parse %"do" s:parse %"od"  {Seq(x , While(e, Seq(s,x1), true))}
+      | %"repeat" s:parse %"until" e:expr                           {Seq(s, While(e, s, false) ) }; 
       parse: s:simp ";" d:parse {Seq (s,d)} | simp 
     )
 
