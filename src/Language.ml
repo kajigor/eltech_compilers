@@ -1,4 +1,4 @@
-open Ostap.Util
+open Ostap
 
 (* AST for expressions *)
 module Expr =
@@ -20,40 +20,44 @@ module Expr =
     | Greater       of t * t
     | LessEqual     of t * t
     | GreaterEqual  of t * t
+    | FCall         of string * t list
 
-    let rec expr_parser s =                                                                                    
-      expr id
-      [|     
-        `Nona ,  [ostap ("||"), (fun x y -> Or (x, y)); 
-                  ostap ("!!"), (fun x y -> Or (x, y));];  
-                    
-        `Nona ,  [ostap ("&&"), (fun x y -> And (x, y))]; 
-        
-        `Nona ,  [ostap ("=="), (fun x y -> Equal (x, y)); 
-                  ostap ("!="), (fun x y -> NotEqual (x, y));
-                  ostap ("<="), (fun x y -> LessEqual (x, y));
-                  ostap (">="), (fun x y -> GreaterEqual (x, y));
-                  ostap ("<"), (fun x y ->  Less (x, y));
-                  ostap (">"), (fun x y ->  Greater (x, y))];
+ 
+    ostap (   
+      expression:                                                                              
+        !(Ostap.Util.expr Ostap.Util.id
+        [|     
+          `Nona ,  [ostap ("!!"), (fun x y -> Or (x, y))];  
+                      
+          `Nona ,  [ostap ("&&"), (fun x y -> And (x, y))]; 
+          
+          `Nona ,  [ostap ("=="), (fun x y -> Equal (x, y)); 
+                    ostap ("!="), (fun x y -> NotEqual (x, y));
+                    ostap ("<="), (fun x y -> LessEqual (x, y));
+                    ostap (">="), (fun x y -> GreaterEqual (x, y));
+                    ostap ("<"), (fun x y ->  Less (x, y));
+                    ostap (">"), (fun x y ->  Greater (x, y))];
 
-        `Lefta , [ostap ("+"), (fun x y -> Add (x, y));
-                  ostap ("-"), (fun x y -> Sub (x, y))]; 
+          `Lefta , [ostap ("+"), (fun x y -> Add (x, y));
+                    ostap ("-"), (fun x y -> Sub (x, y))]; 
 
-        `Lefta , [ostap ("*"), (fun x y -> Mul (x, y));
-                  ostap ("/"), (fun x y -> Div (x, y));
-                  ostap ("%"), (fun x y -> Rem (x, y))]
-      |]                                                                                            
-      expr' s                                                                                             
-      and 
-      ostap (
-        expr':
-          n:DECIMAL                 {Const n}  
-          | e:IDENT                 {Var e}
-          | -"(" expr_parser -")") 
+          `Lefta , [ostap ("*"), (fun x y -> Mul (x, y));
+                    ostap ("/"), (fun x y -> Div (x, y));
+                    ostap ("%"), (fun x y -> Rem (x, y))]
+        |]                                                                                            
+        func);                                                                                            
+
+      func:
+        n:DECIMAL {Const n} 
+        | e:IDENT args:(-"(" !(Util.list0 expression) -")")? 
+          { match args with 
+              | None -> Var e 
+              | Some args -> FCall (e, args) } 
+        | -"(" expression -")") 
 
   end
 
-(* AST statements/commands *)
+(* AST for statements/commands *)
 module Stmt =
   struct
 
@@ -66,10 +70,11 @@ module Stmt =
     | If     of Expr.t * t * t
     | While  of Expr.t * t
     | Until  of t * Expr.t
-
-    let expr = Expr.expr_parser
+    | FCall  of string * Expr.t list
+    | Return of Expr.t
 
     ostap (
+      expr: !(Expr.expression);
       statement:
         x:IDENT ":=" e:expr           {Assign (x, e)}
         | %"read" "(" x:IDENT ")"     {Read x}
@@ -78,11 +83,12 @@ module Stmt =
         | %"if" exp:expr %"then" seq1:sequence seq2:elsePart?
           %"fi"   {If(exp, seq1, match seq2 with None -> Skip | Some seq2 -> seq2)}
         | %"while" exp:expr
-          "do" seq:sequence %"od"      {While(exp, seq)}
+          %"do" seq:sequence %"od"      {While(exp, seq)}
         | %"for" s1:sequence "," e:expr "," s2:sequence
           %"do" s:sequence %"od"       {Seq (s1, While (e, Seq (s, s2)))}
         | %"repeat" seq:sequence 
-          "until" exp:expr             {Until (seq, exp)};
+          %"until" exp:expr             {Until (seq, exp)}
+        | %"return" e:expr             {Return (e)};
 
       elsePart: 
         %"else" sequence
@@ -96,12 +102,29 @@ module Stmt =
 
   end
 
+module Func =
+  struct
+
+    type t = string * string list * Stmt.t
+
+    ostap (
+      arg: IDENT;
+      stmt: !(Stmt.sequence);
+      parse: %"fun" name:IDENT -"(" args:!(Util.list0 arg) -")" %"begin" body:stmt %"end"
+    )
+
+  end
+
 module Program =
   struct
 
-    type t = Stmt.t
+    type t = Func.t list * Stmt.t
 
-    let parse = Stmt.sequence
+    ostap (
+      fdef: !(Func.parse);
+      stmt: !(Stmt.sequence);
+      parse: fdefs:(fdef)* main:stmt
+    )
 
   end
 
