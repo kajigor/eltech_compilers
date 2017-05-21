@@ -24,6 +24,10 @@ type instr =
 | Xor of opnd * opnd
 | And of opnd * opnd
 | Or of opnd * opnd
+| Lbl of string
+| Jnz of string
+| Jz of string
+| Jmp of string
 | Mov  of opnd * opnd
 | Push of opnd
 | Pop  of opnd
@@ -57,6 +61,11 @@ let to_string buf code =
       | Xor (x, y) -> Printf.sprintf "xorl\t%s,\t%s"  (opnd x) (opnd y)
       | Or  (x, y) -> Printf.sprintf "orl\t%s,\t%s"   (opnd x) (opnd y)
       | And (x, y) -> Printf.sprintf "andl\t%s,\t%s"  (opnd x) (opnd y)
+
+      | Lbl l      -> Printf.sprintf "%s:"            l
+      | Jnz l      -> Printf.sprintf "jnz\t%s"        l
+      | Jz  l      -> Printf.sprintf "jz\t%s"         l
+      | Jmp l      -> Printf.sprintf "jmp\t%s"        l
 
       | Mov (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (opnd x) (opnd y)
       | Push x     -> Printf.sprintf "pushl\t%s"      (opnd x)
@@ -104,20 +113,30 @@ let rec sint env prg sstack =
       let env, code, sstack' =
 	match i with
 	| PUSH n ->
-            let env', s = env#allocate sstack in
-            env', [Mov (L n, s)], s :: sstack
-  | LD x ->
-            let env'     = env#local x in
-            let env'', s = env'#allocate sstack in
-            env'', [Mov (M x, edx); Mov (edx, s)], s :: sstack
-	| ST x ->
-            let env' = env#local x in
-            let s :: sstack' = sstack in
-            env', [Mov (s, edx); Mov (edx, M x)], sstack'
-  | READ  ->
-            env, [Call "lread"], [eax]
-  | WRITE ->
-            env, [Push (R 1); Call "lwrite"; Pop (R 1)], []
+             let env', s = env#allocate sstack in
+             env', [Mov (L n, s)], s :: sstack
+  | LD x   ->
+             let env'     = env#local x in
+             let env'', s = env'#allocate sstack in
+             env'', [Mov (M x, edx); Mov (edx, s)], s :: sstack
+	| ST x   ->
+             let env' = env#local x in
+             let s :: sstack' = sstack in
+             env', [Mov (s, edx); Mov (edx, M x)], sstack'
+  | READ   ->
+             env, [Call "lread"], [eax]
+  | WRITE  ->
+             env, [Push (R 1); Call "lwrite"; Pop (R 1)], []
+  | LBL l  ->
+             env, [Lbl l], sstack
+  | JNZ l  ->
+             let s :: sstack' = sstack in
+             env, [Cmp (L 0, s); Jnz l], sstack'
+  | JZ  l  ->
+             let s :: sstack' = sstack in
+             env, [Cmp (L 0, s); Jz l], sstack'
+  | JMP l  ->
+             env, [Jmp l], sstack
   | _ ->
             let x::(y::_ as sstack') = sstack in
             (fun op ->
