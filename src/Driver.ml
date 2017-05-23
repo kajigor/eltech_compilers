@@ -12,8 +12,8 @@ let parse filename =
        inherit Util.Lexers.decimal s
        inherit Util.Lexers.skip [
          Matcher.Skip.whitespaces " \t\n";
-	 Matcher.Skip.lineComment "--";
-	 Matcher.Skip.nestedComment "(*" "*)"
+   Matcher.Skip.lineComment "--";
+   Matcher.Skip.nestedComment "(*" "*)"
        ] s
     end)
     (ostap (!(Stmt.parse) -EOF))
@@ -31,21 +31,20 @@ let main =
         let basename = Filename.chop_suffix infile ".expr" in
         ignore @@ X86.build prog basename
       else 
-	let rec read acc =
-	  try
-	    let r = read_int () in
-	    Printf.printf "> ";
-	    read (acc @ [r]) 
+  let rec read acc =
+    try
+      let r = read_int () in
+      Printf.printf "> ";
+      read (acc @ [r]) 
           with End_of_file -> acc
-	in
-	let input = read [] in	
-	let output = 
-	  if interpret 
-	  then Interpret.Program.eval prog input 
-	  else StackMachine.Interpret.run (StackMachine.Compile.Program.compile prog) input
-	in
-	List.iter (fun i -> Printf.printf "%d\n" i) output
+  in
+  let input = read [] in
+  let output = 
+    if interpret 
+    then Interpret.Program.eval prog input
+    else StackMachine.Interpret.run (StackMachine.Compile.Program.compile prog) input
+  in
+  List.iter (fun i -> Printf.printf "%d\n" i) output
     | `Fail er -> Printf.eprintf "Syntax error: %s\n" er
   with Invalid_argument _ ->
     Printf.printf "Usage: rc [-i] <input file.expr>\n"
-
