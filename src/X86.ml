@@ -31,6 +31,11 @@ type instr =
   | X86Setg    of string
   | X86Setle   of string
   | X86Setge   of string
+  | X86Lbl     of int
+  | X86Jz      of int
+  | X86Jnz     of int
+  | X86Jmp     of int
+  | X86Test of opnd * opnd
 
 let to_string buf code =      
   let instr =
@@ -60,6 +65,11 @@ let to_string buf code =
       | X86Setg x        -> Printf.sprintf "setg\t%s"     x
       | X86Setle x       -> Printf.sprintf "setle\t%s"    x
       | X86Setge x       -> Printf.sprintf "setge\t%s"    x
+      | X86Lbl x         -> Printf.sprintf "lbl%d:"       x
+      | X86Jz x          -> Printf.sprintf "jz\t\tlbl%d"    x
+      | X86Jnz x         -> Printf.sprintf "jnz\t\tlbl%d"   x
+      | X86Jmp x         -> Printf.sprintf "jmp\t\tlbl%d"   x
+      | X86Test (x, y) -> Printf.sprintf "testl\t%s,%s" (opnd x) (opnd y)
   in
   let out s = 
     Buffer.add_string buf "\t"; 
@@ -102,27 +112,31 @@ let rec sint env prg sstack =
       | S_LD x ->
         let env'     = env#local x in
         let env'', s = env'#allocate sstack in
-        env'', (
-          match s with
-          | S _ ->  [X86Mov (M x, edx); X86Mov (edx, s)]
-          | _ ->    [X86Mov (M x, s)]
-        ), s :: sstack
+        (match s with
+        | S _ ->  env'', [X86Mov (M x, edx); X86Mov (edx, s)], s :: sstack
+        | _ -> env'', [X86Mov (M x, s)], s :: sstack)
 
       | S_ST x ->
         let env' = env#local x in
         let s :: sstack' = sstack in
-        env', (
-          match s with
-          | S _ ->  [X86Mov (s, edx); X86Mov (edx, M x)]
-          | _ ->    [X86Mov (s, M x)]
-        ), sstack'
+        (match s with
+        | S _ ->  env', [X86Mov (s, edx); X86Mov (edx, M x)], sstack'
+        | _ -> env', [X86Mov (s, M x)], sstack')
 
       | S_READ  ->
         env, [X86Call "lread"], [eax]
 
       | S_WRITE ->
         env, [X86Push ebx; X86Call "lwrite"; X86Pop edx], []
+      | S_LBL x -> env, [X86Lbl x], []
+      | S_JMP x -> env, [X86Jmp x], []
 
+      | S_CJMP (x,c) -> 
+        let s :: sstack' = sstack in
+        let jmpop = (match c with "z"  -> X86Jz x | "nz" -> X86Jnz x) in
+        (match s with
+        | S _ ->  env, [X86Mov (s, edx); X86Test (edx, edx); jmpop], []
+        | _ -> env, [X86Test (s, s); jmpop], [])
       | _ ->
         let x::(y::_ as sstack') = sstack in
         let andcode = [X86Mov (y, edx); X86AndBin (y, edx);               (*compare y with self*)
@@ -193,9 +207,9 @@ let compile p =
   out "\tret\n";
   Buffer.contents buf
 
-  let build stmt name =
+let build stmt name =
   let outf = open_out (Printf.sprintf "%s.s" name) in
   Printf.fprintf outf "%s" (compile stmt);
   close_out outf;
   let inc = try Sys.getenv "RC_RUNTIME" with _ -> "../runtime" in
-  Sys.command (Printf.sprintf "gcc -m32 -o %s %s/runtime.o %s.s" name inc name)
+    Sys.command (Printf.sprintf "gcc -m32 -o %s %s/runtime.o %s.s" name inc name)

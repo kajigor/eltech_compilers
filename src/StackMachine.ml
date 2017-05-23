@@ -21,9 +21,9 @@ module Instr =
       | S_GREATER
       | S_LESSEQUAL
       | S_GREATEREQUAL
-      | S_LBL   of string
-      | S_JMP   of string
-      | S_CJMP  of string * string
+      | S_LBL   of int
+      | S_JMP   of int
+      | S_CJMP  of int * string
       | S_CALL  of string
       | S_END
       | S_FUN   of string * (string list)
@@ -92,6 +92,12 @@ module Interpret =
 
   end
 
+class lblcounter =
+    object (this)
+      val mutable count  = 0
+      method add_lbls n  = count <- (count + n)
+      method get_count   = count
+end
 
 
 module Compile =
@@ -132,20 +138,41 @@ module Compile =
 
     open Language.Stmt
 
-    let rec compile = function
-    | Skip          -> []
-    | Assign (x, e) -> Expr.compile e @ [S_ST x]
-    | Read    x     -> [S_READ; S_ST x]
-    | Write   e     -> Expr.compile e @ [S_WRITE]
-    | Seq    (l, r) -> compile l @ compile r
+    let rec compile lblc = function
+    | Skip                  -> []
+    | Assign (x, e)         -> Expr.compile e @ [S_ST x]
+    | Read    x             -> [S_READ; S_ST x]
+    | Write   e             -> Expr.compile e @ [S_WRITE]
+    | Seq    (l, r)         -> compile lblc l @ compile lblc r
+    | op ->
+      lblc#add_lbls 2;
+      let lbl1   = lblc#get_count-1 in
+      let lbl2   = lblc#get_count in
+      match op with
+      | If (exp, seq1, seq2) ->
+          Expr.compile exp @
+          [S_CJMP (lbl1,"z")] @
+          compile lblc seq1 @
+          [S_JMP lbl2] @
+          [S_LBL lbl1] @
+          compile lblc seq2 @
+          [S_LBL lbl2]
 
-    end
+      | While (exp, seq)     ->
+          [S_JMP lbl1] @
+          [S_LBL lbl2] @
+          compile lblc seq @
+          [S_LBL lbl1] @
+          Expr.compile exp @
+          [S_CJMP (lbl2, "nz")]
+
+  end
 
 
   module Program =
     struct
 
-    let compile = Stmt.compile
+    let compile = Stmt.compile (new lblcounter)
 
     end
 

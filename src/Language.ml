@@ -20,6 +20,7 @@ module Expr =
     | Greater       of t * t
     | LessEqual     of t * t
     | GreaterEqual  of t * t
+    | Call          of string * t list
 
     let rec expr_parser s =                                                                                    
       expr id

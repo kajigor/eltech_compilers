@@ -13,13 +13,17 @@ NATIVE_TARGETS=src/rc.native
 
 .DEFAULT_GOAL: all
 
-all: main runtime
+all: main runtime success
 
 runtime:
 	cd runtime && make all && cd ..
 
 main:
 	$(OB) -Is src $(BYTE_TARGETS) $(NATIVE_TARGETS)
+	
+	
+success:
+	@echo "SUCCESS"
 
 clean: 
 	cd runtime && make clean && cd .. && $(RM) -r _build *.log  *.native *.byte
