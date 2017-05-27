@@ -20,7 +20,6 @@ module Expr =
     | Greater       of t * t
     | LessEqual     of t * t
     | GreaterEqual  of t * t
-    | Call          of string * t list
 
     let rec expr_parser s =                                                                                    
       expr id
@@ -54,7 +53,6 @@ module Expr =
 
   end
 
-(* AST statements/commands *)
 module Stmt =
   struct
 
@@ -66,43 +64,27 @@ module Stmt =
     | Seq    of t * t
     | If     of Expr.t * t * t
     | While  of Expr.t * t
-    | FunDcl of string * string list * t
-    | Return of Expr.t
+    | Until  of t * Expr.t
 
-    let expr_parser = Expr.expr_parser
+    let expr = Expr.expr_parser
 
     ostap (
       statement:
-        x:IDENT ":=" e:expr_parser           {Assign (x, e)}
+        x:IDENT ":=" e:expr           {Assign (x, e)}
         | %"read" "(" x:IDENT ")"     {Read x}
-        | %"write" "(" e:expr_parser ")"     {Write e}
+        | %"write" "(" e:expr ")"     {Write e}
         | %"skip"                     {Skip}
-        | %"if" exp:expr_parser %"then" seq1:sequence seq2:elsePart?
+        | %"if" exp:expr %"then" seq1:sequence seq2:elsePart?
           %"fi"   {If(exp, seq1, match seq2 with None -> Skip | Some seq2 -> seq2)}
-        | %"while" exp:expr_parser
+        | %"while" exp:expr
           "do" seq:sequence %"od"      {While(exp, seq)}
-        | %"for" s1:sequence "," e:expr_parser "," s2:sequence
+        | %"for" s1:sequence "," e:expr "," s2:sequence
           %"do" s:sequence %"od"       {Seq (s1, While (e, Seq (s, s2)))}
         | %"repeat" s:sequence 
-          "until" e:expr_parser {Seq (s, While (Equal ((Const  0), e), s))}
-        | %"return" e:expr_parser        {Return e};
-      args:
-        e:(IDENT)? suf:(-"," IDENT)* {
-            match e with
-            | Some w -> w::suf
-            | _      -> []
-        };
-
-      func:
-        %"fun" f:IDENT "(" a:args ")"
-        %"begin"
-               s:sequence
-        %"end" {FunDcl ((String.concat "" ["_"; f]), a, s)};
-
-
-      elsePart: 
+          "until" e:expr {Seq (s, While (Equal ((Const  0), e), s))};
+     elsePart: 
         %"else" sequence
-        | %"elif" exp:expr_parser %"then" seq1:sequence seq2:elsePart?
+        | %"elif" exp:expr %"then" seq1:sequence seq2:elsePart?
           {If(exp,seq1, match seq2 with None -> Skip | Some seq2 -> seq2)};
 
       sequence:
@@ -120,3 +102,4 @@ module Program =
     let parse = Stmt.sequence
 
   end
+

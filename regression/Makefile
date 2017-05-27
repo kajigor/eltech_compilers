@@ -1,4 +1,4 @@
-TESTS=test001 test002 test012 test013 test003 test004 test005 test006 test007 test008 test012 test013
+TESTS=test001 test002 test003 test004 test005 test006 test007 test008 test012 test013 test009 test010 test014 test015 test016 test017 test018 iftest test019 test020 test021 test022 test023
 
 TESTSC=test001 test002 test012 test013 test003 test004 test005 test006 test007 test008 test009 test010 test011 test014 test015 test016 test017 test018
 
