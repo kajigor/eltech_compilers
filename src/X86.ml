@@ -63,16 +63,16 @@ let rec sint env prg sstack =
   match prg with
   | []        -> env, [], []
   | i :: prg' ->
-      let env, code, sstack' = 
-	match i with
-	| PUSH n ->  
+    let env, code, sstack' = 
+      match i with
+        | PUSH n ->  
             let env', s = env#allocate sstack in
             env', [Mov (L n, s)], s :: sstack
         | LD x ->
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
             env'', [Mov (M x, s)], s :: sstack
-	| ST x ->
+        | ST x ->
             let env' = env#local x in
             let s :: sstack' = sstack in
             env', [Mov (s, M x)], sstack' 
@@ -87,13 +87,13 @@ let rec sint env prg sstack =
               | S _, S _ -> env, [Mov (y, edx); op x edx; Mov (edx, y)], sstack'
               | _        -> env, [op x y], sstack'   
             )
-              (match i with 
-	      | MUL -> fun x y -> Mul (x, y)
-	      | ADD -> fun x y -> Add (x, y)
-              )
-      in
-      let env, code', sstack'' = sint env prg' sstack' in
-      env, code @ code', sstack''
+            (match i with 
+      	      | MUL -> fun x y -> Mul (x, y)
+      	      | ADD -> fun x y -> Add (x, y)
+            )
+    in
+    let env, code', sstack'' = sint env prg' sstack' in
+    env, code @ code', sstack''  
 	
 let compile p = 
   let env, code, [] = sint (new env) (Compile.Program.compile p) [] in
