@@ -21,9 +21,12 @@ module Instr =
       | GREATER
       | LESSEQUAL
       | GREATEREQUAL
-      | LBL  of int
-      | CJMP of int * string
-      | JMP  of int
+      | LBL  of string
+      | CJMP of string * string
+      | JMP  of string 
+      | CALL of string
+      | RET
+      | END
 
   end
 
@@ -41,8 +44,11 @@ module Program =
 module Interpret =
   struct
 
-    open Instr
-    open Interpret.Stmt
+  open Instr
+  open Interpret.Stmt
+
+  (*store new value of variable*)
+  let update st x v = fun y -> if y = x then v else st y
 
   (*recursively find label in program and 
   return tail of list of statements after label*)
@@ -51,9 +57,11 @@ module Interpret =
     if h = lbl then prg' 
     else findlbl prg' lbl 
 
+  let novars = (fun _ -> failwith "undefined variable")
 
-  let run prg input =
-    let prg_full = prg in (*full original program for labels search*)
+
+  let run prg_full input =
+    (*next stmt, vars, input, output*)
     let rec run' ((prg, stack, st, input, output) as conf) =
       match prg with
       | []        -> conf
@@ -70,12 +78,20 @@ module Interpret =
                           (prg', stack', update st x h, input, output)
           | LBL  m     -> (prg', stack, st, input, output)
           | JMP  m     -> (findlbl prg_full (LBL m), stack, st, input, output)
+          
           | CJMP (m,c) -> let h :: stack' = stack in
                           if (match c with 
                             | "z"  -> (h = 0) 
                             | "nz" -> (h != 0)) 
                           then (findlbl prg_full (LBL m), stack', st, input, output)
                           else (prg', stack', st, input, output)
+          
+          | CALL name  -> let (_, stack', _, input', output') =   (*recursively eval function*)
+                            run' (findlbl prg_full (LBL name), stack, novars, input, output) in 
+                          (prg', stack', st, input', output')  (*use returned stack, input, output*)
+
+          | RET        -> ([], stack, novars, input, output)
+          | END        -> ([], stack, st, input, output)
           | _ -> 
             let y :: x :: stack'' = stack in
             (prg', (match i with 
@@ -97,7 +113,7 @@ module Interpret =
   in
 
   let (_, _, _, _, output) = 
-    run' (prg, [], (fun _ -> failwith "undefined variable"), input, []) in
+    run' (findlbl prg_full (LBL "main"), [], novars, input, []) in
 
   output
 
@@ -109,7 +125,6 @@ module Compile =
   struct
 
   open Instr
-
 
   module Expr =
     struct
@@ -135,6 +150,11 @@ module Compile =
     | LessEqual (x, y)    -> short LESSEQUAL (x,y)
     | GreaterEqual (x, y) -> short GREATEREQUAL (x,y)
 
+    | FCall (name, args)  -> 
+        (*compile args from last to first; results of evaluation will be stored in stack*)
+        (List.fold_left (fun code arg -> code @ (compile arg)) [] (List.rev args)) @
+        [CALL name]
+
     end
 
   (*сlass for label counting; labels named as lbl0, lbl1, lbl2...*)
@@ -158,10 +178,17 @@ module Compile =
     | Read    x             -> [READ; ST x]
     | Write   e             -> Expr.compile e @ [WRITE]
     | Seq    (l, r)         -> compile lblc l @ compile lblc r
+
+    | FCall (name, args)    -> 
+        (List.fold_left (fun code arg -> code @ (Expr.compile arg)) [] (List.rev args)) @
+        [CALL name]
+
+    | Return e              -> Expr.compile e @ [RET]
+
     | op ->
       lblc#add_lbls 2;
-      let lbl1   = lblc#get_count-1 in
-      let lbl2   = lblc#get_count in
+      let lbl1   = "_lbl" ^ (string_of_int (lblc#get_count-1)) in
+      let lbl2   = "_lbl" ^ (string_of_int (lblc#get_count)) in
       match op with
       | If (exp, seq1, seq2) ->
           Expr.compile exp @
@@ -188,12 +215,29 @@ module Compile =
     end
 
 
+  module Func = 
+    struct
+
+    let compile lblc (name, args, body) =
+
+      [LBL name] @
+      (List.map (fun arg -> ST arg) args) @ (*pop params from stack and save in variables*)
+      (Stmt.compile lblc body)
+ 
+    end
+
+
   module Program =
     struct
 
-    let compile = Stmt.compile (new lblcounter)
+    let compile (fdefs, main) = 
+      let lblc = new lblcounter in
+
+        (List.fold_left (fun code fdef -> code @ (Func.compile lblc fdef)) [] fdefs) @
+        [LBL "main"] @
+        (Stmt.compile lblc main) @
+        [END]
 
     end
 
 end
-

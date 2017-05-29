@@ -31,10 +31,10 @@ type instr =
   | Setg    of string
   | Setle   of string
   | Setge   of string
-  | Lbl     of int
-  | Jz      of int
-  | Jnz     of int
-  | Jmp     of int
+  | Lbl     of string
+  | Jz      of string
+  | Jnz     of string
+  | Jmp     of string
   | Test    of opnd * opnd
 
 let to_string buf code =
@@ -65,10 +65,10 @@ let to_string buf code =
       | Setg x        -> Printf.sprintf "setg\t%s"     x
       | Setle x       -> Printf.sprintf "setle\t%s"    x
       | Setge x       -> Printf.sprintf "setge\t%s"    x
-      | Lbl x         -> Printf.sprintf "lbl%d:"       x
-      | Jz x          -> Printf.sprintf "jz\t\tlbl%d"    x
-      | Jnz x         -> Printf.sprintf "jnz\t\tlbl%d"   x
-      | Jmp x         -> Printf.sprintf "jmp\t\tlbl%d"   x
+      | Lbl x         -> Printf.sprintf "%s:"          x
+      | Jz x          -> Printf.sprintf "jz\t\t%s"  x
+      | Jnz x         -> Printf.sprintf "jnz\t\t%s" x
+      | Jmp x         -> Printf.sprintf "jmp\t\t%s" x
       | Test (x, y)   -> Printf.sprintf "testl\t%s,%s" (opnd x) (opnd y)
   in
   let out s =
@@ -125,7 +125,9 @@ let rec sint env prg sstack =
 
       | READ  -> env, [Call "lread"], [eax]
       | WRITE -> env, [Push ebx; Call "lwrite"; Pop edx], []
-      | LBL x -> env, [Lbl x], []
+      | LBL x -> if (String.compare x "main" == 0) then 
+                    env, [Lbl x; Push ebp; Mov (esp, ebp); Sub (L (env#get_depth * 4), esp)], []
+                 else env, [Lbl x], []
       | JMP x -> env, [Jmp x], []
 
       | CJMP (x,c) -> 
@@ -134,6 +136,10 @@ let rec sint env prg sstack =
         (match s with
         | S _ ->  env, [Mov (s, edx); Test (edx, edx); jmpop], []
         | _   ->  env, [Test (s, s); jmpop], [])
+
+      | CALL x -> env, [], sstack
+      | RET    -> env, [], sstack
+      | END    -> env, [Mov (ebp, esp); Pop ebp; Ret], sstack
 
       | _ ->
         let x::(y::_ as sstack') = sstack in
@@ -195,14 +201,14 @@ let compile p =
     env#get_locals;
   out "\t.text\n";
   out "\t.globl\tmain\n";
-  out "main:\n";
+  (*out "main:\n";
   out "\tpushl\t%ebp\n";
   out "\tmovl\t%esp,%ebp\n";
-  out (Printf.sprintf "\tsubl\t$%d,%%esp\n" (env#get_depth * 4));
+  out (Printf.sprintf "\tsubl\t$%d,%%esp\n" (env#get_depth * 4));*)
   to_string buf code;
-  out "\tmovl\t%ebp,%esp\n";
+  (*out "\tmovl\t%ebp,%esp\n";
   out "\tpopl\t%ebp\n";
-  out "\tret\n";
+  out "\tret\n";*)
   Buffer.contents buf
 
   let build stmt name =
