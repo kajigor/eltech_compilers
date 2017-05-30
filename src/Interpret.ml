@@ -44,33 +44,29 @@ module Stmt =
     let rec eval stmt ((st, input, output) as conf) =
       match stmt with
       | Skip                  -> conf
+
       | Assign (x, e)         -> (update st x (Expr.eval e st), input, output)
+
       | Read    x             ->
           let z :: input' = input in (* :: берет верхний элемента списка входных данных *)
           (update st x z, input', output)
+
       | Write   e             -> (st, input, output @ [Expr.eval e st])
+
       | Seq (s1, s2)          -> eval s1 conf |> eval s2 (*вычисляется s1 и conf передается в s2 *)
+
       | If  (exp, seq1, seq2) -> 
           if (Expr.eval exp st) != 0 
           then eval seq1 conf 
           else eval seq2 conf
+
       | While (exp, seq)      -> 
-          (*recursive loop function*)
-          let rec loop exp' seq' ((st', _, _) as conf') = 
-            if (Expr.eval exp' st') != 0 
-            then loop exp' seq' (eval seq' conf') 
-            else conf' 
-          in
-          loop exp seq conf
+	  if (Expr.eval exp st) != 0 then eval seq conf |> eval stmt else conf
+
       | Repeat (seq, exp)      ->
-          (*recursive loop function*)
-          let rec loop exp' seq' conf' = 
-            let (newst, _, _) as newconf = eval seq' conf' in
-            if (Expr.eval exp' newst) == 0
-            then loop exp' seq' newconf
-            else newconf
-          in
-          loop exp seq conf
+	let (st', _, _) as conf' = eval seq conf in
+	if (Expr.eval exp st') == 0 then eval stmt conf' else conf'
+
 
   end
 

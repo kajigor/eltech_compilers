@@ -34,8 +34,7 @@ module Interpret =
 	open Language.Expr
 	open Interpret.Expr
 
-  (*recursively find label in program and 
-  return tail of list of statements after label*)
+  (*найти лейбл и вернуть всю программу после лейбла*)
   let rec findlbl prg lbl =
     let h :: prg' = prg in
     if h = lbl then prg' 
@@ -43,7 +42,7 @@ module Interpret =
 
 
   let run prg input =
-    let prg_full = prg in (*full original program for labels search*)
+    let prg_full = prg in 
     let rec run' ((prg, stack, st, input, output) as conf) =
       match prg with
       | []        -> conf
@@ -51,7 +50,7 @@ module Interpret =
         run' (
           match i with
           | READ       -> let z :: input' = input in
-                          (prg', z :: stack, st, input', output) (* :: либо снимает с начала, либо кладет наверх *)
+                          (prg', z :: stack, st, input', output) 
           | WRITE      -> let h :: stack' = stack in 
                           (prg', stack', st, input, output @ [h])
           | PUSH n     -> (prg', n :: stack, st, input, output)
@@ -99,7 +98,6 @@ module Compile =
 
     end
 
-  (*сlass for label counting; labels named as lbl0, lbl1, lbl2...*)
   class lblcounter =
     object (this)
       val mutable count  = 0

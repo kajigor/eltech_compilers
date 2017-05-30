@@ -155,9 +155,7 @@ let rec sint env prg sstack =
               		) in
 
 			match x, y with
-			(*if both operands in stack*)
 			| S _, S _ -> env, [Mov (y, edx)] @ apply_operation x edx @[Mov (edx, y)], sstack'
-			(*if one or both operands in register*) 
 			| _ -> env, apply_operation x y, sstack' 
          
 		    in
