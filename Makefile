@@ -1,20 +1,25 @@
-all: Driver.cmo
-	ocamlc -rectypes -o compiler -I `ocamlfind -query GT` -I `ocamlfind -query ostap` -I `ocamlfind -query re.str` re.cma re_emacs.cma re_str.cma GT.cma ostap.cmo Language.cmo Interpret.cmo StackMachine.cmo X86.cmo Driver.cmo
+MKDIR ?= mkdir -vp
+CP    ?= cp
 
-Language.cmo: Language.ml
-	ocamlc -rectypes -c -pp "camlp5o -I `ocamlfind -query GT.syntax.all` pa_gt.cmo -I `ocamlfind -query ostap` pa_ostap.cmo -L `ocamlfind -query GT.syntax.all`" -I `ocamlfind -query GT` -I `ocamlfind -query ostap` GT.cma $<
+OB=ocamlbuild -cflag -g -no-hygiene -use-ocamlfind -plugin-tag "package(str)" -classic-display
+ifdef OBV
+OB += -verbose 6
+endif
 
-Interpret.cmo: Interpret.ml Language.cmo
-	ocamlc -rectypes -c -pp "camlp5o -I `ocamlfind -query GT.syntax.all` pa_gt.cmo -I `ocamlfind -query ostap` pa_ostap.cmo -L `ocamlfind -query GT.syntax.all`" -I `ocamlfind -query GT` -I `ocamlfind -query ostap` GT.cma $<
+BYTE_TARGETS=src/rc.byte 
+NATIVE_TARGETS=src/rc.native
 
-StackMachine.cmo: StackMachine.ml Language.cmo Interpret.cmo
-	ocamlc -rectypes -c -pp "camlp5o -I `ocamlfind -query GT.syntax.all` pa_gt.cmo -I `ocamlfind -query ostap` pa_ostap.cmo -L `ocamlfind -query GT.syntax.all`" -I `ocamlfind -query GT` -I `ocamlfind -query ostap` GT.cma $<
+.PHONY: all clean runtime
 
-X86.cmo: X86.ml StackMachine.cmo
-	ocamlc -rectypes -c -pp "camlp5o -I `ocamlfind -query GT.syntax.all` pa_gt.cmo -I `ocamlfind -query ostap` pa_ostap.cmo -L `ocamlfind -query GT.syntax.all`" -I `ocamlfind -query GT` -I `ocamlfind -query ostap` GT.cma $<
+.DEFAULT_GOAL: all
 
-Driver.cmo: Driver.ml StackMachine.cmo X86.cmo Interpret.cmo
-	ocamlc -rectypes -c -pp "camlp5o -I `ocamlfind -query GT.syntax.all` pa_gt.cmo -I `ocamlfind -query ostap` pa_ostap.cmo -L `ocamlfind -query GT.syntax.all`" -I `ocamlfind -query GT` -I `ocamlfind -query ostap` GT.cma Driver.ml
+all: main runtime
 
-clean:
-	rm -Rf *~ *.cmo compiler
+runtime:
+	cd runtime && make all && cd ..
+
+main:
+	$(OB) -Is src $(BYTE_TARGETS) $(NATIVE_TARGETS)
+
+clean: 
+	cd runtime && make clean && cd .. && $(RM) -r _build *.log  *.native *.byte
