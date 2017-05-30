@@ -3,11 +3,10 @@ open Instr
 
 type opnd = R of int | S of int | L of int | M of string
 
-let regs  = [|"%eax"; "%ebx"; "%ecx"; "%esi"; "%edi"; "%edx"; "%esp"; "%ebp"|]
+let regs  = [|"%eax"; "%ebx"; "%ecx"; "%edx"; "%esi"; "%edi"; "%esp"; "%ebp"|]
 let nregs = Array.length regs - 3
 
-let [|eax; ebx; ecx; esi; edi; edx; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
-
+let [|eax; ebx; ecx; edx; esi; edi; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
 
 type instr =
 | Add  of opnd * opnd
@@ -56,7 +55,6 @@ let to_string buf code =
       | Or  (s1, s2) -> Printf.sprintf "\torl\t%s,\t%s"   (opnd s1) (opnd s2)
       | And (s1, s2) -> Printf.sprintf "\tandl\t%s,\t%s"  (opnd s1) (opnd s2)
 
-      (*выставляем байты если выполняются условия*)
       | Setl         -> "\tsetl\t%al"
       | Setle        -> "\tsetle\t%al"
       | Setg         -> "\tsetg\t%al"
@@ -64,11 +62,8 @@ let to_string buf code =
       | Sete         -> "\tsete\t%al"
       | Setne        -> "\tsetne\t%al"
     
-                               
-      (*в wrap_mem_access мы в y кладём edx, соотв. здесь al кладём в edx*)           
-      | Movzbl       -> "\tmovzbl\t%al,\t%edx" 
-      
-      (*делаем знаковое деление*)
+                                          
+      | Movzbl       -> "\tmovzbl\t%al,\t%eax" 
       | Cdq          -> "\tcdq"
       | Ret          -> "\tret"
       | Call p       -> Printf.sprintf "\tcall\t%s" p 
@@ -82,12 +77,13 @@ let to_string buf code =
     
 module S = Set.Make (String)
 
-let save_eax_edx f =
-  [Push eax; Push edx] @ f @ [Pop edx; Pop eax] 
+let save_regs f =
+  [Push eax; Push ebx] @ f @ [Pop ebx; Pop eax] 
 
-let wrap_mem_access x y f =
-  save_eax_edx @@ [Mov (x, eax); Mov (y, edx)] @ (f eax edx) @ [Mov (edx, y)]
+let to_eax_ebx x y f =
+  save_regs @@ [Mov (x, eax); Mov (y, ebx)] @ (f eax ebx) @ [Mov (ebx, y)]
    
+
 let compare x y cmp =
   [Cmp (x, y); cmp; Movzbl]
 
@@ -97,7 +93,7 @@ class env =
     val depth  = 0
 	
     method allocate = function
-      | []                          -> this, R 1
+      | []                          -> this, R 2
       | R i :: _ when i < nregs - 1 -> this, R (i+1)
       | S i :: _                    -> {< depth = max depth (i+1) >}, S (i+1)
       | _                           -> {< depth = max depth 1 >}, S 1 
@@ -119,7 +115,7 @@ let rec sint env prg sstack =
         | LD x ->
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
-            env'', (wrap_mem_access (M x) s @@ fun x y -> [Mov (x, y)]), s :: sstack
+            env'', [Mov (M x, s)], s :: sstack
 	    | ST x ->
             let env' = env#local x in
             let s :: sstack' = sstack in
@@ -127,53 +123,56 @@ let rec sint env prg sstack =
         | READ  ->
             env, [Call "lread"], [eax]
         | WRITE ->
-            env, [Push (R 1); Call "lwrite"; Pop (R 1)], [] 
+            env, [Push (R 2); Call "lwrite"; Pop (R 2)], [] 
         | BINOP op ->
             let x::(y::_ as sstack') = sstack in
             env, (match op with
                  | "+" ->
-                    wrap_mem_access x y @@ fun x y -> [Add (x, y); Mov (y, eax)]
+                    to_eax_ebx x y @@ fun x y -> [Add (x, y); Mov (y, eax)]
                  | "-" ->
-                    wrap_mem_access x y @@ fun x y -> [Sub (x, y); Mov (y, eax)]
+                    to_eax_ebx x y @@ fun x y -> [Sub (x, y); Mov (y, eax)]
                  | "*" ->
-                     save_eax_edx [Mov (y, eax); Mul (x, eax); Mov (eax, y)]
+                     save_regs [Mov (y, eax); Mul (x, eax); Mov (eax, y)]
                  | "/" ->
-                    save_eax_edx [Mov (y, eax); Cdq; Div (x, y); Mov (eax, y)]
+                    save_regs [Mov (y, eax); Cdq; Div (x, y); Mov (eax, y)]
                  | "%" ->
-                    save_eax_edx [Mov (y, eax); Cdq; Div (x, y); Mov (edx, y)]
+                    save_regs [Mov (y, eax); Cdq; Div (x, y); Mov (ebx, y)]
                  | "<" ->
-                    wrap_mem_access x y @@ fun x y -> compare x y Setl
+                    to_eax_ebx x y @@ fun x y -> compare x y Setl
                  | "<=" ->
-                    wrap_mem_access x y @@ fun x y -> compare x y Setle
+                    to_eax_ebx x y @@ fun x y -> compare x y Setle
                  | ">" ->
-                    wrap_mem_access x y @@ fun x y -> compare x y Setg
+                    to_eax_ebx x y @@ fun x y -> compare x y Setg
                  | ">=" ->
-                    wrap_mem_access x y @@ fun x y -> compare x y Setge
+                    to_eax_ebx x y @@ fun x y -> compare x y Setge
                  | "==" ->
-                    wrap_mem_access x y @@ fun x y -> compare x y Sete
+                    to_eax_ebx x y @@ fun x y -> compare x y Sete
                  | "!=" ->
-                    wrap_mem_access x y @@ fun x y -> compare x y Setne
+                    to_eax_ebx x y @@ fun x y -> compare x y Setne
                  | "&&" ->
-                    save_eax_edx [
+                    save_regs [
                                     (* Set eax value to null, mov x to edx, check that edx is not null
                                        if it is true - in eax we now have not null 
                                     *)
                                     Xor (eax, eax);
-                                    Mov (x, edx);
-                                    Cmp (edx, eax);
+                                    Mov (x, ebx);
+                                    Cmp (ebx, eax);
                                     Setne;
-                                    Mov (y, edx);
-                                    Mul (eax, edx);
+                                    (* Mov y to edx and mul eax and edx (result in edx)
+                                       result of && is not null only if eax not null (x != 0) and edx not null (y != 0) *)
+                                    Mov (y, ebx);
+                                    Mul (eax, ebx);
                                     Xor (eax, eax);
-                                    Cmp (edx, eax);
+                                    Cmp (ebx, eax);
                                     Setne;
                                     Mov (eax, y)]
                  | "!!" ->
-                    save_eax_edx [
+                    save_regs [
+                                    (* Set eax value to null, mov x to edx, check that or y, edx not null*)
                                     Xor (eax, eax);
-                                    Mov (x, edx);
-                                    Or (y, edx);
-                                    Cmp (edx, eax);
+                                    Mov (x, ebx);
+                                    Or (y, ebx);
+                                    Cmp (ebx, eax);
                                     Setne;
                                     Mov (eax, y)]
               ), sstack'
