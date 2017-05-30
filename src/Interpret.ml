@@ -5,14 +5,14 @@ module Expr =
   struct
 
     open Expr
+    open Language.BinOp
 
     let rec eval expr st = 
       let eval' e = eval e st in
       match expr with
       | Var   x     -> st x
       | Const z     -> z
-      | Add  (x, y) -> eval' x + eval' y
-      | Mul  (x, y) -> eval' x * eval' y
+      | Binop  (op, x, y) -> (apply op) (eval' x) (eval' y)
 
   end
 
@@ -34,9 +34,6 @@ module Stmt =
 	  (update st x z, input', output)
       | Write   e     -> (st, input, output @ [Expr.eval e st])
       | Seq (s1, s2)  -> eval s1 conf |> eval s2 
-      | If (e, s1, s2) -> if (Expr.eval state' e) <> 0 then (eval conf s1) else (eval conf s2)
-      (*eval self again but with new conf (which is eval'ed body of while')*)
-      | While (e, s)   -> if (Expr.eval state' e) <> 0 then eval (eval conf s) stmt else conf
 
   end
 
