@@ -1,0 +1,124 @@
+### Starting build.
+# Target: src/rc.ml.depends, tags: { debug, extension:ml, file:src/rc.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/rc.ml > src/rc.ml.depends # cached
+# Target: src/Driver.ml.depends, tags: { debug, extension:ml, file:src/Driver.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/Driver.ml > src/Driver.ml.depends # cached
+# Target: src/Interpret.ml.depends, tags: { debug, extension:ml, file:src/Interpret.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/Interpret.ml > src/Interpret.ml.depends # cached
+# Target: src/Language.ml.depends, tags: { debug, extension:ml, file:src/Language.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/Language.ml > src/Language.ml.depends # cached
+# Target: src/Language.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/Language.cmo, file:src/Language.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Language.cmo src/Language.ml # cached
+# Target: src/Interpret.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/Interpret.cmo, file:src/Interpret.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Interpret.cmo src/Interpret.ml # cached
+# Target: src/StackMachine.ml.depends, tags: { debug, extension:ml, file:src/StackMachine.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/StackMachine.ml > src/StackMachine.ml.depends # cached
+# Target: src/StackMachine.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/StackMachine.cmo, file:src/StackMachine.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/StackMachine.cmo src/StackMachine.ml # cached
+# Target: src/X86.ml.depends, tags: { debug, extension:ml, file:src/X86.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/X86.ml > src/X86.ml.depends
+# Target: src/X86.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/X86.cmo, file:src/X86.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/X86.cmo src/X86.ml
++ ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/X86.cmo src/X86.ml
+File "src/X86.ml", line 7, characters 4-14:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[|  |]
+File "src/X86.ml", line 10, characters 4-46:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[|  |]
+File "src/X86.ml", line 115, characters 12-24:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 126, characters 12-24:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 127, characters 20-63:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+""
+File "src/X86.ml", line 133, characters 12-32:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 139, characters 12-1579:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+(READ|WRITE|PUSH _|LD _|ST _|LBL _|JMP _|CJMP (_, _))
+File "src/X86.ml", line 162, characters 12-1380:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+(READ|WRITE|PUSH _|LD _|ST _|LBL _|JMP _|CJMP (_, _))
+File "src/X86.ml", line 187, characters 6-19:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+(_, _, _::_)
+File "src/X86.ml", line 138, characters 16-24:
+Warning 26: unused variable shortcmp.
+File "src/X86.ml", line 161, characters 16-24:
+Warning 26: unused variable shortcmp.
+# Target: src/Driver.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/Driver.cmo, file:src/Driver.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Driver.cmo src/Driver.ml
+# Target: src/rc.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/rc.cmo, file:src/rc.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/rc.cmo src/rc.ml
+# Target: src/rc.byte, tags: { byte, debug, dont_link_with, extension:byte, file:src/rc.byte, link, ocaml, package(re,ostap,GT), program, quiet, rectypes, traverse }
+ocamlfind ocamlc -linkpkg -g -package re,ostap,GT src/Language.cmo src/Interpret.cmo src/StackMachine.cmo src/X86.cmo src/Driver.cmo src/rc.cmo -o src/rc.byte
+# Target: src/Language.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/Language.cmx, file:src/Language.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Language.cmx src/Language.ml # cached
+# Target: src/Interpret.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/Interpret.cmx, file:src/Interpret.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Interpret.cmx src/Interpret.ml # cached
+# Target: src/StackMachine.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/StackMachine.cmx, file:src/StackMachine.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/StackMachine.cmx src/StackMachine.ml # cached
+# Target: src/X86.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/X86.cmx, file:src/X86.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/X86.cmx src/X86.ml
++ ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/X86.cmx src/X86.ml
+File "src/X86.ml", line 7, characters 4-14:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[|  |]
+File "src/X86.ml", line 10, characters 4-46:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[|  |]
+File "src/X86.ml", line 115, characters 12-24:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 126, characters 12-24:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 127, characters 20-63:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+""
+File "src/X86.ml", line 133, characters 12-32:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 139, characters 12-1579:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+(READ|WRITE|PUSH _|LD _|ST _|LBL _|JMP _|CJMP (_, _))
+File "src/X86.ml", line 162, characters 12-1380:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+(READ|WRITE|PUSH _|LD _|ST _|LBL _|JMP _|CJMP (_, _))
+File "src/X86.ml", line 187, characters 6-19:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+(_, _, _::_)
+File "src/X86.ml", line 138, characters 16-24:
+Warning 26: unused variable shortcmp.
+File "src/X86.ml", line 161, characters 16-24:
+Warning 26: unused variable shortcmp.
+# Target: src/Driver.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/Driver.cmx, file:src/Driver.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Driver.cmx src/Driver.ml
+# Target: src/rc.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/rc.cmx, file:src/rc.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/rc.cmx src/rc.ml
+# Target: src/rc.native, tags: { debug, dont_link_with, extension:native, file:src/rc.native, link, native, ocaml, package(re,ostap,GT), program, quiet, rectypes, traverse }
+ocamlfind ocamlopt -linkpkg -g -package re,ostap,GT src/Language.cmx src/Interpret.cmx src/StackMachine.cmx src/X86.cmx src/Driver.cmx src/rc.cmx -o src/rc.native
+# Compilation successful.
