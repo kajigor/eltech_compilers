@@ -120,7 +120,7 @@ let rec sint env prg sstack =
         | LD x ->
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
-            env'', [Mov (M x, s)], s :: sstack
+            env'', (to_eax_ebx (M x) s @@ fun x y -> [Mov (x, y)]), s :: sstack
 	    | ST x ->
             let env' = env#local x in
             let s :: sstack' = sstack in
