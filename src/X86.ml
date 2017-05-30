@@ -161,7 +161,7 @@ let rec sint env prg sstack =
       let env, code', sstack'' = sint env prg' sstack' in
       env, code @ code', sstack''
 
-let compile p =
+let compile (p: Language.Stmt.t) =
   let env, code, [] = sint (new env) (Compile.Program.compile p) [] in
   let buf   = Buffer.create 1024 in
   let out s = Buffer.add_string buf s in
@@ -181,9 +181,9 @@ let compile p =
   out "\tret\n";
   Buffer.contents buf
 
-let build stmt name =
+let build p name =
   let outf = open_out (Printf.sprintf "%s.s" name) in
-  Printf.fprintf outf "%s" (compile stmt);
+  Printf.fprintf outf "%s" (compile p);
   close_out outf;
   let inc = try Sys.getenv "RC_RUNTIME" with _ -> "../runtime" in
   Sys.command (Printf.sprintf "gcc -m32 -o %s %s/runtime.o %s.s" name inc name)

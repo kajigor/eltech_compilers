@@ -1,4 +1,5 @@
 (* AST for expressions *)
+open Ostap.Util
 module Expr =
   struct
 
@@ -6,6 +7,7 @@ module Expr =
     | Var   of string
     | Const of int
     | Binop of string * t * t
+    | Call  of string * t list
 
 ostap(
   parse: expr0;
@@ -24,7 +26,11 @@ ostap(
     List.fold_left(fun e (op, y) -> Binop(Ostap.Matcher.Token.repr op, e, y)) h t};
   prim:
     n:DECIMAL       {Const n}
-    | e:IDENT         {Var e}
+    | e:IDENT       args:(-"(" list0[parse] -")")?  {
+      match args with
+      | None      -> Var e
+      | Some args -> Call (e, args)
+    }
     | -"(" parse -")"
   )
   end
@@ -42,14 +48,20 @@ module Stmt =
     | If     of Expr.t * t * t
     | While  of Expr.t * t
     | Repeat of t * Expr.t
+    | Call   of string * Expr.t list
+    | Return of Expr.t
 
     let expr = Expr.parse
 
     ostap (
-      simp: x:IDENT ":=" e:expr  {Assign (x, e)}
+      simp:
+        -x:IDENT (":=" e:expr                 {Assign (x, e)} |
+                  "(" a:list0[Expr.parse] ")" {Call   (x, a)}
+                  )
       | %"read"  "(" x:IDENT ")" {Read x}
       | %"write" "(" e:expr  ")" {Write e}
       | %"skip"                  {Skip}
+      | %"return" e:expr         {Return e}
 
       | %"if" e:!(Expr.parse) %"then" s:!(parse)
         %"fi"                    {If (e, s, Skip)}
@@ -66,11 +78,24 @@ module Stmt =
 
   end
 
+module Function =
+  struct
+    type t = string * (string list * Stmt.t)
+    ostap(
+      parse: %"fun" name:IDENT "(" args:list0[ostap(IDENT)] ")"
+             %"begin"
+                body:!(Stmt.parse)
+             %"end" {name, (args, body)}
+      )
+  end
+
 module Program =
   struct
 
-    type t = Stmt.t
+    type t = Function.t list * Stmt.t
+    ostap(
+      parse: !(Function.parse)* !(Stmt.parse)
+      )
 
-    let parse = Stmt.parse
 
   end

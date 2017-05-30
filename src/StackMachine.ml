@@ -154,7 +154,7 @@ module Compile =
 	| Read    x          -> [READ; ST x]
 	| Write   e          -> Expr.compile e @ [WRITE]
 	| Seq    (l, r)      -> compile l @ compile r
-  
+
   | If     (e, s1, s2) -> let lbl1 = get_next_label() in
                           let lbl2 = get_next_label() in
                           Expr.compile e @

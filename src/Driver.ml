@@ -8,7 +8,7 @@ let parse filename =
   Util.parse
     (object
        inherit Matcher.t s
-       inherit Util.Lexers.ident ["read"; "write"; "skip"; "if"; "then"; "else"; "fi"; "while"; "do"; "od"] s
+       inherit Util.Lexers.ident ["read"; "write"; "skip"; "if"; "then"; "else"; "fi"; "while"; "do"; "od"; "return"; "begin"; "end"; "fun"] s
        inherit Util.Lexers.decimal s
        inherit Util.Lexers.skip [
          Matcher.Skip.whitespaces " \t\n";
@@ -16,7 +16,7 @@ let parse filename =
 	 Matcher.Skip.nestedComment "(*" "*)"
        ] s
     end)
-    (ostap (!(Stmt.parse) -EOF))
+    (ostap (!(Program.parse) -EOF))
 
 let main =
   try
@@ -25,7 +25,7 @@ let main =
     let to_compile = not (interpret || stack) in
     let infile     = Sys.argv.(if not to_compile then 2 else 1) in
     match parse infile with
-    | `Ok prog ->
+    | `Ok (fs, prog) ->
       if to_compile
       then
         let basename = Filename.chop_suffix infile ".expr" in
@@ -41,7 +41,7 @@ let main =
 	let input = read [] in
 	let output =
 	  if interpret
-	  then Interpret.Program.eval prog input
+	  then Interpret.Program.eval (fs, prog) input
 	  else StackMachine.Interpret.run (StackMachine.Compile.Program.compile prog) input
 	in
 	List.iter (fun i -> Printf.printf "%d\n" i) output
