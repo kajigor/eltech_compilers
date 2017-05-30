@@ -3,10 +3,15 @@ open Instr
 
 type opnd = R of int | S of int | L of int | M of string
 
-let regs  = [|"%eax"; "%ebx"; "%ecx"; "%edx"; "%esi"; "%edi"; "%esp"; "%ebp"|]
+let regs  = [|"%eax"; "%ebx"; "%ecx"; "%edi"; "%esi"; "%edx"; "%esp"; "%ebp"|]
 let nregs = Array.length regs - 3
 
 let [|eax; ebx; ecx; edx; esi; edi; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
+
+(*иначе edx будет edi*)
+let tmp = edi
+let edi = edx
+let edx = tmp
 
 type instr =
 | Add  of opnd * opnd
@@ -136,7 +141,7 @@ let rec sint env prg sstack =
                  | "/" ->
                     save_regs [Mov (y, eax); Cdq; Div (x, y); Mov (eax, y)]
                  | "%" ->
-                    save_regs [Mov (y, eax); Cdq; Div (x, y); Mov (ebx, y)]
+                    save_regs [Mov (y, eax); Cdq; Div (x, y); Mov (edx, y)]
                  | "<" ->
                     to_eax_ebx x y @@ fun x y -> compare x y Setl
                  | "<=" ->
