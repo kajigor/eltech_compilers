@@ -33,7 +33,6 @@ module Stmt =
       | Seq     (s1, s2)    -> eval s1 conf |> eval s2 
 	  | IfElse  (e, s1, s2) -> if (Expr.eval e st) == 1 then eval s1 conf else eval s2 conf
 	  | WhileDo (e, s)      -> if (Expr.eval e st) == 1 then eval s conf |> eval stmt else conf
-	  | ForDo   (e, a, s)   -> if (Expr.eval e st) == 1 then eval s conf |> eval a |> eval stmt else conf
 	  | RepeatUntil (s,e)   -> eval s conf |> eval (WhileDo(Bin("==",e,Const 0),s))
   end
 

@@ -117,10 +117,6 @@ module Compile =
 							let endLbl = gen_label (Random.int(15)+1)  in 
 							[LABEL startLbl] @ Expr.compile e @ [JZ endLbl] @ 
 							compile s @ [JMP startLbl] @ [LABEL endLbl]					
-	| ForDo   (e,a,s) 	 -> let startLbl = gen_label (Random.int(15)+1) in 
-							let endLbl = gen_label (Random.int(15)+1)  in 
-							[LABEL startLbl] @ Expr.compile e @ [JZ endLbl] @ 
-							compile s @ compile a @[JMP startLbl] @ [LABEL endLbl]	
 	| RepeatUntil (s,e  )-> let startLbl = gen_label (Random.int(15)+1) in 
 							[LABEL startLbl] @ compile s @ Expr.compile e @ [JZ startLbl] 	
 						

@@ -70,7 +70,6 @@ module Stmt =
     | Seq     of t * t
 	| IfElse  of Expr.t * t * t
 	| WhileDo of Expr.t * t
-	| ForDo   of Expr.t * t * t
 	| RepeatUntil of t * Expr.t
 	
     let expr = Expr.expr_parse
@@ -83,7 +82,7 @@ module Stmt =
 	  | %"if"     e: expr "then"   s1: parse "fi"									{IfElse (e,s1,Skip)}
       | %"if"     e: expr "then"   s1: parse "else" s2: parse "fi"					{IfElse (e,s1,s2)}
 	  | %"while"  e: expr "do"     s:  parse "od"									{WhileDo (e,s)}
-	  | %"for"    a: simp ","      e:  expr  ","    ai: simp  "do" s: parse  "od"	{Seq (a, ForDo (e,ai,s))}
+	  | %"for"    a: simp ","      e:  expr  ","    ai: simp  "do" s: parse  "od"	{Seq (a, WhileDo (e, Seq (s, ai)))}
 	  | %"repeat" s: parse "until" e: expr    										{RepeatUntil (s,e)};
 	  
       parse: 
