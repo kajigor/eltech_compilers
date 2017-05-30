@@ -21,6 +21,10 @@ module Instr =
       | NEQ
       | AND
       | OR
+      | LBL of string
+      | JNZ of string
+      | JZ of string
+      | JMP of string
 
   end
 
@@ -37,53 +41,72 @@ module Interpret =
     open Instr
     open Interpret.Stmt
 
+
+
     let run prg input =
-      let rec run' prg ((stack, st, input, output) as conf) =
+      (*let prg_origin = prg in*)
+      let goto lbl =
+        let rec findl prg lbl =
+          let i :: prg' = prg in
+            if i = lbl then prg'
+            else findl prg' lbl in
+        findl prg lbl in
+
+      let rec run' ((prg, stack, st, input, output) as conf) =
       	match prg with
       	| []        -> conf
       	| i :: prg' ->
-            run' prg' (
+            run' (
               match i with
               | READ  -> let z :: input' = input in
-                (z :: stack, st, input', output)
+                      (prg', z :: stack, st, input', output)
               | WRITE -> let z :: stack' = stack in
-                (stack', st, input, output @ [z])
+                      (prg', stack', st, input, output @ [z])
               | PUSH n -> 
-                (n :: stack, st, input, output)
+                      (prg', n :: stack, st, input, output)
               | LD   x -> 
-                (st x :: stack, st, input, output)
+                      (prg', st x :: stack, st, input, output)
               | ST   x -> let z :: stack' = stack in
-                (stack', update st x z, input, output)
+                      (prg', stack', update st x z, input, output)
               | ADD -> let y :: x :: stack' = stack in
-                      ((x + y):: stack', st, input, output)
+                      (prg', (x + y):: stack', st, input, output)
               | MUL -> let y :: x :: stack' = stack in
-                      ((x * y):: stack', st, input, output)
+                      (prg', (x * y):: stack', st, input, output)
               | SUB -> let y :: x :: stack' = stack in
-                      ((x - y):: stack', st, input, output)
+                      (prg', (x - y):: stack', st, input, output)
               | DIV -> let y :: x :: stack' = stack in
-                      ((x / y):: stack', st, input, output)
+                      (prg', (x / y):: stack', st, input, output)
               | MOD -> let y :: x :: stack' = stack in
-                      ((x mod y):: stack', st, input, output)
+                      (prg', (x mod y):: stack', st, input, output)
               | LT -> let y :: x :: stack' = stack in
-                      ((if x < y then 1 else 0):: stack', st, input, output)
+                      (prg', (if x < y then 1 else 0):: stack', st, input, output)
               | LE -> let y :: x :: stack' = stack in
-                      ((if x <= y then 1 else 0):: stack', st, input, output)
+                      (prg', (if x <= y then 1 else 0):: stack', st, input, output)
               | GT -> let y :: x :: stack' = stack in
-                      ((if x > y then 1 else 0):: stack', st, input, output)
+                      (prg', (if x > y then 1 else 0):: stack', st, input, output)
               | GE -> let y :: x :: stack' = stack in
-                      ((if x >= y then 1 else 0):: stack', st, input, output)
+                      (prg', (if x >= y then 1 else 0):: stack', st, input, output)
               | EQ -> let y :: x :: stack' = stack in
-                      ((if x == y then 1 else 0):: stack', st, input, output)
+                      (prg', (if x == y then 1 else 0):: stack', st, input, output)
               | NEQ -> let y :: x :: stack' = stack in
-                      ((if x <> y then 1 else 0):: stack', st, input, output)
+                      (prg', (if x <> y then 1 else 0):: stack', st, input, output)
               | AND -> let y :: x :: stack' = stack in
-                      ((if (x <> 0) && (y <> 0) then 1 else 0):: stack', st, input, output)
+                      (prg', (if (x <> 0) && (y <> 0) then 1 else 0):: stack', st, input, output)
               | OR -> let y :: x :: stack' = stack in
-                      ((if (x <> 0) || (y <> 0) then 1 else 0):: stack', st, input, output)
+                      (prg', (if (x <> 0) || (y <> 0) then 1 else 0):: stack', st, input, output)
+
+              | LBL  _ -> (prg', stack, st, input, output)
+              | JNZ  l -> let x :: stack' = stack in
+                      if x <> 0 then (goto (LBL l), stack', st, input, output)
+                      else (prg', stack', st, input, output)
+              | JZ   l -> let x :: stack' = stack in
+                      if x == 0 then (goto (LBL l), stack', st, input, output)
+                      else (prg', stack', st, input, output)
+              | JMP  l -> (goto (LBL l), stack, st, input, output)
             )
       in
-      let (_, _, _, output) = 
-          run' prg (
+      let (_, _, _, _, output) = 
+          run' (prg,
           [], 
           (fun _ -> failwith "undefined variable"),
           input,
@@ -97,6 +120,8 @@ module Compile =
   struct
 
     open Instr
+
+    let lblCounter = ref 0
 
     module Expr =
       struct
@@ -126,12 +151,34 @@ module Compile =
 
       	open Language.Stmt
 
+        
+        let get_next_label() =
+            incr lblCounter;
+            ".lbl"^string_of_int !lblCounter
+
       	let rec compile = function
       	| Skip          -> []
       	| Assign (x, e) -> Expr.compile e @ [ST x]
       	| Read    x     -> [READ; ST x]
       	| Write   e     -> Expr.compile e @ [WRITE]
       	| Seq    (l, r) -> compile l @ compile r
+
+        | If(e, s1, s2) -> let lbl1 = get_next_label() in
+                           let lbl2 = get_next_label() in
+                           Expr.compile e @
+                           [JZ lbl1] @
+                           compile s1 @
+                           [JMP lbl2; LBL lbl1] @
+                           compile s2 @
+                           [LBL lbl2]
+
+        | While  (e, s) -> let lbl1 = get_next_label() in
+                           let lbl2 = get_next_label() in
+                           [JMP lbl2; LBL lbl1] @
+                           compile s @
+                           [LBL lbl2] @
+                           Expr.compile e @
+                           [JNZ lbl1]
 
       end
 

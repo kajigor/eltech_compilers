@@ -38,6 +38,9 @@ module Stmt =
     | Read   of string
     | Write  of Expr.t
     | Seq    of t * t
+    | If     of Expr.t * t * t
+    | While  of Expr.t * t
+    | Repeat of t * Expr.t
 
     let expr = Expr.parse
 
@@ -45,7 +48,20 @@ module Stmt =
       simp: x:IDENT ":=" e:expr  {Assign (x, e)}
       | %"read"  "(" x:IDENT ")" {Read x}
       | %"write" "(" e:expr  ")" {Write e}
-      | %"skip"                  {Skip};
+      | %"skip"                  {Skip}
+
+      | %"if" e:!(Expr.parse) 
+        %"then" s:!(parse)
+        %"fi"                    {If (e, s, Skip)}
+
+      | %"if" e:!(Expr.parse) 
+        %"then" s1:!(parse)
+        %"else" s2:!(parse)
+        %"fi"                    {If (e, s1, s2)}
+
+      | %"while" e:!(Expr.parse) 
+        %"do" s:!(parse)
+        %"od"                    {While (e, s)};
       
       parse: s:simp ";" d:parse {Seq (s,d)} | simp 
     )
