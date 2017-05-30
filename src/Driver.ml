@@ -48,3 +48,4 @@ let main =
     | `Fail er -> Printf.eprintf "Syntax error: %s\n" er
   with Invalid_argument _ ->
     Printf.printf "Usage: rc [-i] <input file.expr>\n"
+
