@@ -41,6 +41,12 @@ module Interpret =
             | LD   x -> (st x :: stack, st, input, output)
 	    | ST   x -> let z :: stack' = stack in
               (stack', update st x z, input, output)
+<<<<<<< HEAD
+	    | BINOP op ->
+		  let y::x::stack' = stack in
+                  ((apply op x y)::stack', st, input, output)
+        )
+=======
 	    | _ -> let y :: x :: stack' = stack in
               ((match i with ADD -> (+) | _ -> ( * )) x y :: stack', 
                st, 
@@ -48,6 +54,7 @@ module Interpret =
                output
               )
            )
+>>>>>>> parent of f226c2c... fix language and interpreter
       in
       let (_, _, _, output) = 
 	run' prg ([], 
