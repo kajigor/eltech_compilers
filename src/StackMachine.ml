@@ -10,6 +10,17 @@ module Instr =
       | ST   of string
       | ADD  
       | MUL
+      | SUB
+      | DIV
+      | MOD
+      | LT
+      | LE
+      | GT
+      | GE
+      | EQ
+      | NEQ
+      | AND
+      | OR
 
   end
 
@@ -43,12 +54,32 @@ module Interpret =
                 (st x :: stack, st, input, output)
               | ST   x -> let z :: stack' = stack in
                 (stack', update st x z, input, output)
-              | _ -> let y :: x :: stack' = stack in
-                ((match i with ADD -> (+) | _ -> ( * )) x y :: stack', 
-                 st, 
-                 input, 
-                 output
-                )
+              | ADD -> let y :: x :: stack' = stack in
+                      ((x + y):: stack', st, input, output)
+              | MUL -> let y :: x :: stack' = stack in
+                      ((x * y):: stack', st, input, output)
+              | SUB -> let y :: x :: stack' = stack in
+                      ((x - y):: stack', st, input, output)
+              | DIV -> let y :: x :: stack' = stack in
+                      ((x / y):: stack', st, input, output)
+              | MOD -> let y :: x :: stack' = stack in
+                      ((x mod y):: stack', st, input, output)
+              | LT -> let y :: x :: stack' = stack in
+                      ((if x < y then 1 else 0):: stack', st, input, output)
+              | LE -> let y :: x :: stack' = stack in
+                      ((if x <= y then 1 else 0):: stack', st, input, output)
+              | GT -> let y :: x :: stack' = stack in
+                      ((if x > y then 1 else 0):: stack', st, input, output)
+              | GE -> let y :: x :: stack' = stack in
+                      ((if x >= y then 1 else 0):: stack', st, input, output)
+              | EQ -> let y :: x :: stack' = stack in
+                      ((if x == y then 1 else 0):: stack', st, input, output)
+              | NEQ -> let y :: x :: stack' = stack in
+                      ((if x <> y then 1 else 0):: stack', st, input, output)
+              | AND -> let y :: x :: stack' = stack in
+                      ((if (x <> 0) && (y <> 0) then 1 else 0):: stack', st, input, output)
+              | OR -> let y :: x :: stack' = stack in
+                      ((if (x <> 0) || (y <> 0) then 1 else 0):: stack', st, input, output)
             )
       in
       let (_, _, _, output) = 
@@ -73,11 +104,21 @@ module Compile =
       	open Language.Expr
 
       	let rec compile = function 
-      	| Var x      -> [LD   x]
-      	| Const n    -> [PUSH n]
-      	| Add (x, y) -> (compile x) @ (compile y) @ [ADD]
-      	| Mul (x, y) -> (compile x) @ (compile y) @ [MUL]
-
+      	| Var x               -> [LD   x]
+      	| Const n             -> [PUSH n]
+        | Binop ("+", x, y)   -> (compile x) @ (compile y) @ [ADD]
+        | Binop ("-", x, y)   -> (compile x) @ (compile y) @ [SUB]
+        | Binop ("*", x, y)   -> (compile x) @ (compile y) @ [MUL]
+        | Binop ("/", x, y)   -> (compile x) @ (compile y) @ [DIV]
+        | Binop ("%", x, y)   -> (compile x) @ (compile y) @ [MOD]
+        | Binop ("<", x, y)   -> (compile x) @ (compile y) @ [LT]
+        | Binop ("<=", x, y)  -> (compile x) @ (compile y) @ [LE]
+        | Binop (">", x, y)   -> (compile x) @ (compile y) @ [GT]
+        | Binop (">=", x, y)  -> (compile x) @ (compile y) @ [GE]
+        | Binop ("==", x, y)  -> (compile x) @ (compile y) @ [EQ]
+        | Binop ("!=", x, y)  -> (compile x) @ (compile y) @ [NEQ]
+        | Binop ("&&", x, y)  -> (compile x) @ (compile y) @ [AND]
+        | Binop ("!!", x, y)  -> (compile x) @ (compile y) @ [OR]
       end
 
     module Stmt =
