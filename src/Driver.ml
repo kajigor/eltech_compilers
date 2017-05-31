@@ -8,7 +8,7 @@ let parse filename =
   Util.parse 
     (object 
        inherit Matcher.t s 
-       inherit Util.Lexers.ident ["read"; "write"; "skip"] s
+       inherit Util.Lexers.ident ["read"; "write"; "skip"; "if"; "fi"; "then"; "else"; "while"; "do"; "od";] s
        inherit Util.Lexers.decimal s
        inherit Util.Lexers.skip [
          Matcher.Skip.whitespaces " \t\n";
@@ -47,5 +47,4 @@ let main =
 	List.iter (fun i -> Printf.printf "%d\n" i) output
     | `Fail er -> Printf.eprintf "Syntax error: %s\n" er
   with Invalid_argument _ ->
-    Printf.printf "Usage: rc [-i] <input file.expr>\n"
-
+Printf.printf "Usage: rc [-i] <input file.expr>\n"
