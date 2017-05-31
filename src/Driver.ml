@@ -29,7 +29,7 @@ let main =
       if to_compile
       then
         let basename = Filename.chop_suffix infile ".expr" in
-        ignore @@ X86.build prog basename
+        ignore @@ X86.build (fs, prog) basename
       else
 	let rec read acc =
 	  try
@@ -42,7 +42,7 @@ let main =
 	let output =
 	  if interpret
 	  then Interpret.Program.eval (fs, prog) input
-	  else StackMachine.Interpret.run (StackMachine.Compile.Program.compile prog) input
+	  else StackMachine.Interpret.run (StackMachine.Compile.Program.compile (fs, prog)) input
 	in
 	List.iter (fun i -> Printf.printf "%d\n" i) output
     | `Fail er -> Printf.eprintf "Syntax error: %s\n" er

@@ -137,32 +137,34 @@ let rec sint env prg sstack =
              env, [Cmp (L 0, s); Jz l], sstack'
   | JMP l  ->
              env, [Jmp l], sstack
-  | _ ->
+  | BEGIN (_,_,_) -> env, [], sstack
+  | END   -> env, [], sstack
+  | BINOP  s ->
             let x::(y::_ as sstack') = sstack in
             (fun op ->
               env, [Mov (y, edx)] @ op x edx @ [ Mov (edx, y)], sstack'
             )
-            (match i with
-	          | ADD -> fun x y -> [Add (x, y)]
-            | MUL -> fun x y -> [Mul (x, y)]
-            | SUB -> fun x y -> [Sub (x, y)]
-	          | DIV -> fun x y -> [Mov (y, eax); Cdq; Div (x, y); Mov (eax, edx)]
-            | MOD -> fun x y -> [Mov (y, eax); Cdq; Div (x, y);]
-            | LT  -> fun x y -> comparator x y Setl
-            | LE  -> fun x y -> comparator x y Setle
-            | GT  -> fun x y -> comparator x y Setg
-            | GE  -> fun x y -> comparator x y Setge
-            | EQ  -> fun x y -> comparator x y Sete
-            | NEQ -> fun x y -> comparator x y Setne
-            | AND -> fun x y -> [Xor (eax, eax); Cmp (y, eax); Setne; Mov (x, edx); Mul (eax, edx); Xor(eax, eax); Cmp(edx, eax); Setne; Mov (eax, y)]
-            | OR  -> fun x y -> [Xor (eax, eax); Or (x, y); Cmp (y, eax); Setne; Mov (eax, y)]
+            (match s with
+	          | "+" -> fun x y -> [Add (x, y)]
+            | "*" -> fun x y -> [Mul (x, y)]
+            | "-" -> fun x y -> [Sub (x, y)]
+	          | "/" -> fun x y -> [Mov (y, eax); Cdq; Div (x, y); Mov (eax, edx)]
+            | "%" -> fun x y -> [Mov (y, eax); Cdq; Div (x, y);]
+            | "<"  -> fun x y -> comparator x y Setl
+            | "<="  -> fun x y -> comparator x y Setle
+            | ">"  -> fun x y -> comparator x y Setg
+            | ">="  -> fun x y -> comparator x y Setge
+            | "=="  -> fun x y -> comparator x y Sete
+            | "!=" -> fun x y -> comparator x y Setne
+            | "&&" -> fun x y -> [Xor (eax, eax); Cmp (y, eax); Setne; Mov (x, edx); Mul (eax, edx); Xor(eax, eax); Cmp(edx, eax); Setne; Mov (eax, y)]
+            | "!!"  -> fun x y -> [Xor (eax, eax); Or (x, y); Cmp (y, eax); Setne; Mov (eax, y)]
             )
       in
       let env, code', sstack'' = sint env prg' sstack' in
       env, code @ code', sstack''
 
-let compile (p: Language.Stmt.t) =
-  let env, code, [] = sint (new env) (Compile.Program.compile p) [] in
+let compile (fs, (p: Language.Stmt.t)) =
+  let env, code, [] = sint (new env) (Compile.Program.compile (fs,p)) [] in
   let buf   = Buffer.create 1024 in
   let out s = Buffer.add_string buf s in
   out "\t.data\n";
@@ -181,9 +183,9 @@ let compile (p: Language.Stmt.t) =
   out "\tret\n";
   Buffer.contents buf
 
-let build p name =
+let build (fs, prog) name =
   let outf = open_out (Printf.sprintf "%s.s" name) in
-  Printf.fprintf outf "%s" (compile p);
+  Printf.fprintf outf "%s" (compile (fs, prog));
   close_out outf;
   let inc = try Sys.getenv "RC_RUNTIME" with _ -> "../runtime" in
   Sys.command (Printf.sprintf "gcc -m32 -o %s %s/runtime.o %s.s" name inc name)
