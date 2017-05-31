@@ -42,7 +42,7 @@ module Interpret =
          let rec findlb prg lb = 
             let nom::prg' = prg in
                if nom = lb then prg'
-               else findlb prg' lb
+               else findlb prg' lb in
 
     let run prg input =
       let prg_full = prg in
