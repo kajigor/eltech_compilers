@@ -3,14 +3,14 @@ open Expr
 open Stmt
 open Ostap
 open Ostap.Util
-open GT
+
 
 
 let rec expr_parse s =                                                                                    
 	expr id
 	[|                                                                                            
-		`Nona ,  [ostap ("||"), (fun x y -> Or (x, y)); 
-                  ostap ("!!"), (fun x y -> Or (x, y));];  
+	`Nona ,  [ostap ("||"), (fun x y -> Or (x, y)); 
+                  ostap ("!!"), (fun x y -> Or (x, y))];  
                     
         `Nona ,  [ostap ("&&"), (fun x y -> And (x, y))]; 
         
@@ -39,19 +39,19 @@ ostap (
   simp: x:IDENT ":=" e:expr_parse     {Assign (x, e)}
       | %"read" "(" x:IDENT ")" {Read x}
       | %"write" "(" e:expr_parse ")" {Write e}
-      | %"skip"                 {Skip};
-	  | %"if" exp:expr_parse %"then" seq1:sequence seq2:elsePart?
+      | %"skip"                 {Skip}
+      | %"if" exp:expr_parse %"then" seq1:stmt seq2:elsePart?
           %"fi"   {If(exp, seq1, match seq2 with None -> Skip | Some seq2 -> seq2)}
       | %"while" exp:expr_parse
-          "do" seq:sequence %"od"      {While(exp, seq)}
-      | %"for" s1:sequence "," e:expr_parse "," s2:sequence
-          %"do" s:sequence %"od"       {Seq (s1, While (e, Seq (s, s2)))}
-      | %"repeat" seq:sequence 
+          "do" seq:stmt %"od"      {While(exp, seq)}
+      | %"for" s1:stmt "," e:expr_parse "," s2:stmt
+          %"do" s:stmt %"od"       {Seq (s1, While (e, Seq (s, s2)))}
+      | %"repeat" seq:stmt 
           "until" exp:expr_parse             {Until (seq, exp)};
 		  
   elsePart: 
-      %"else" sequence
-      | %"elif" exp:expr %"then" seq1:sequence seq2:elsePart?
+      %"else" stmt
+      | %"elif" exp:expr_parse %"then" seq1:stmt seq2:elsePart?
           {If(exp,seq1, match seq2 with None -> Skip | Some seq2 -> seq2)};
       
   stmt: s:simp ";" d:stmt {Seq (s,d)}
@@ -72,17 +72,35 @@ let parse filename =
     (ostap (stmt -EOF))
     
 let _ =
-  match Sys.argv with
-  | [|_; filename|] ->
-      match parse filename with
-      | `Ok stmt -> 
-        let basename = Filename.chop_suffix filename ".expr" in      
-        let text = X86.compile stmt in
-        Printf.printf "%s\n" (show (Stmt.t) stmt);
-        let asm  = basename ^ ".s" in
-        let ouch = open_out asm   in
-      Printf.fprintf ouch "%s\n" text;
-      close_out ouch;
-        let runtime = try Sys.getenv "RUNTIME" with _ -> "../runtime" in
-        ignore @@ Sys.command (Printf.sprintf "gcc -m32 -o %s %s/runtime.o %s.s" basename runtime basename)
-      | `Fail e -> Printf.eprintf "Parsing error: %s\n" e
+    try
+    let interpret  = Sys.argv.(1) = "-i"  in
+    let stack      = Sys.argv.(1) = "-s"  in
+    let to_compile = not (interpret || stack) in
+    let infile     = Sys.argv.(if not to_compile then 2 else 1) in
+    match parse infile with
+
+    | `Ok prog ->
+      if to_compile
+      then
+        let basename = Filename.chop_suffix infile ".expr" in
+        ignore @@ X86.build prog basename
+      else
+      let rec read acc =
+        try
+          let r = read_int () in
+          Printf.printf "> ";
+          read (acc @ [r]) 
+              with End_of_file -> acc
+      in
+      let input = read [] in
+      let output = 
+        if interpret 
+        then Interpret.Program.eval prog input
+        else StackMachine.Interpret.run (StackMachine.Compile.Program.compile prog) input
+      in
+      List.iter (fun i -> Printf.printf "%d\n" i) output
+
+    | `Fail er -> Printf.eprintf "Syntax error: %s\n" er
+      with Invalid_argument _ ->
+        Printf.printf "Usage: rc [-i | -s] <input file.expr>\n";
+Printf.printf "Example: cat test001.input | .././rc.native -s test001.expr\n"

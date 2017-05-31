@@ -10,7 +10,7 @@ module Instr =
       | ST   of string
       | ADD  
       | MUL
-	  | SUB
+      | SUB
       | DIV
       | REM
       | OR
@@ -21,7 +21,7 @@ module Instr =
       | MORE
       | LESSEQUAL
       | MOREEQUAL
-	  | LBL  of int
+      | LBL  of int
       | CJMP of int * string
       | JMP  of int
 
@@ -46,34 +46,35 @@ module Interpret =
       else findlbl prg' lbl
 
     let run prg input =
-      let rec run' prg ((stack, st, input, output) as conf) =
+      let savePrg = prg in
+      let rec run' ((prg, stack, st, input, output) as conf) =
 	match prg with
 	| []        -> conf
 	| i :: prg' ->
-            run' prg' (
+            run' (
             match i with
             | READ  -> let z :: input' = input in
-              (z :: stack, st, input', output)
+              (prg',z :: stack, st, input', output)
             | WRITE -> let z :: stack' = stack in
-              (stack', st, input, output @ [z])
-			| PUSH n -> (n :: stack, st, input, output)
-            | LD   x -> (st x :: stack, st, input, output)
-			| ST   x -> let z :: stack' = stack in
-              (stack', update st x z, input, output)
-			| LBL  m     -> (prg', stack, st, input, output)
-            | JMP  m     -> (findlbl prg_full (LBL m), stack, st, input, output)
+              (prg',stack', st, input, output @ [z])
+	    | PUSH n -> (prg', n :: stack, st, input, output)
+            | LD   x -> (prg', st x :: stack, st, input, output)
+	    | ST   x -> let z :: stack' = stack in
+              (prg',stack', update st x z, input, output)
+	    | LBL  m     -> (prg', stack, st, input, output)
+            | JMP  m     -> (findlbl savePrg (LBL m), stack, st, input, output)
             | CJMP (m,c) -> let h :: stack' = stack in
                           if (match c with 
                             | "z"  -> (h = 0) 
                             | "nz" -> (h != 0)) 
-                          then (findlbl prg_full (LBL m), stack', st, input, output)
+                          then (findlbl savePrg (LBL m), stack', st, input, output)
                           else (prg', stack', st, input, output)
-			| _ -> let y :: x :: stack' = stack in
-              ((match i with 
-			  | ADD -> (+) 
-			  | MUL -> ( * )
-			  | SUB       -> ( - )
-			  | DIV       -> ( / )
+	    | _ -> let y :: x :: stack' = stack in
+              (prg',(match i with 
+              | ADD -> (+) 
+	      | MUL -> ( * )
+	      | SUB       -> ( - )
+              | DIV       -> ( / )
               | REM       -> ( mod )
               | OR        -> (fun a b -> if (a == 0) && (b == 0) then 0 else 1)
               | AND       -> (fun a b -> if (a == 0) || (b == 0) then 0 else 1)
@@ -82,19 +83,21 @@ module Interpret =
               | LESS      -> (fun a b -> if (a < b) then 1 else 0)
               | MORE      -> (fun a b -> if (a > b) then 1 else 0)
               | LESSEQUAL -> (fun a b -> if (a <= b) then 1 else 0)
-              | MOREEQUAL -> (fun a b -> if (a >= b) then 1 else 0)) x y :: stack', 
+              | MOREEQUAL -> (fun a b -> if (a >= b) then 1 else 0)) 
+               x y :: stack', 
                st, 
                input, 
                output
               )
            )
       in
-      let (_, _, _, output) = 
-	run' prg ([], 
-	          (fun _ -> failwith "undefined variable"),
-	          input,
-	          []
-	         ) 
+      let (_,_, _, _, output) = 
+	run' (prg,
+              [], 
+	      (fun _ -> failwith "undefined variable"),
+	      input,
+	      []
+	      ) 
       in
       output
   end
@@ -114,23 +117,23 @@ module Compile =
 	| Const n           -> [PUSH n]
 	| Add (x, y)        -> (compile x) @ (compile y) @ [ADD]
 	| Mul (x, y)        -> (compile x) @ (compile y) @ [MUL]
-	| Sub (x, y)        -> (compile x) @ (compile y) [SUB] 
-    | Div (x, y)        -> (compile x) @ (compile y) [DIV] 
-    | Rem (x, y)        -> (compile x) @ (compile y) [REM]
-    | Or (x, y)         -> (compile x) @ (compile y) [OR] 
-    | And (x, y)        -> (compile x) @ (compile y) [AND] 
-    | Equal (x, y)      -> (compile x) @ (compile y) [EQUAL] 
-    | NotEqual (x, y)   -> (compile x) @ (compile y) [NOTEQUAL] 
-    | Less (x, y)       -> (compile x) @ (compile y) [LESS] 
-    | More (x, y)       -> (compile x) @ (compile y) [MORE] 
-    | LessEqual (x, y)  -> (compile x) @ (compile y) [LESSEQUAL] 
-    | MoreEqual (x, y)  -> (compile x) @ (compile y) [MOREEQUAL] 
+	| Sub (x, y)        -> (compile x) @ (compile y) @ [SUB] 
+        | Div (x, y)        -> (compile x) @ (compile y) @ [DIV] 
+        | Rem (x, y)        -> (compile x) @ (compile y) @ [REM]
+        | Or (x, y)         -> (compile x) @ (compile y) @ [OR] 
+        | And (x, y)        -> (compile x) @ (compile y) @ [AND] 
+        | Equal (x, y)      -> (compile x) @ (compile y) @ [EQUAL] 
+        | NotEqual (x, y)   -> (compile x) @ (compile y) @ [NOTEQUAL] 
+        | Less (x, y)       -> (compile x) @ (compile y) @ [LESS] 
+        | More (x, y)       -> (compile x) @ (compile y) @ [MORE] 
+        | LessEqual (x, y)  -> (compile x) @ (compile y) @ [LESSEQUAL] 
+        | MoreEqual (x, y)  -> (compile x) @ (compile y) @ [MOREEQUAL] 
 
-    end
+     end
 	  
 	  
-	class lblcounter =
-    object (this)
+    class lblcounter =
+      object (this)
       val mutable count  = 0
       method add_lbls n  = count <- (count + n)
       method get_count   = count
@@ -176,7 +179,6 @@ module Compile =
           [CJMP (lbl1, "z")]
     end
 
-      end
 
     module Program =
       struct

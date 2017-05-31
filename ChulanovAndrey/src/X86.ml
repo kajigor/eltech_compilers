@@ -3,10 +3,12 @@ open Instr
 
 type opnd = R of int | S of int | L of int | M of string
 
-let regs  = [|"%eax"; "%ebx"; "%ecx"; "%esi"; "%edi"; "%edx"; "%esp"; "%ebp"|]
-let nregs = Array.length regs - 3
+let regs  = [|"%ebx"; "%ecx"; "%esi"; "%edi";"%eax";  "%edx"; "%esp"; "%ebp"|]
+let nregs = Array.length regs - 4
 
-let [|eax; ebx; ecx; esi; edi; edx; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
+let [|al;dl|] = [|"%al";"%dl"|]
+
+let [|ebx; ecx; esi; edi;eax;  edx; esp; ebp|] = Array.mapi (fun i _ -> R i) regs
 
 type instr =
 | Add  of opnd * opnd
@@ -62,7 +64,7 @@ let to_string buf code =
       | Setg x        -> Printf.sprintf "setg\t%s"     x
       | Setle x       -> Printf.sprintf "setle\t%s"    x
       | Setge x       -> Printf.sprintf "setge\t%s"    x
-	  | Lbl x         -> Printf.sprintf "lbl%d:"       x
+      | Lbl x         -> Printf.sprintf "lbl%d:"       x
       | Jz x          -> Printf.sprintf "jz\t\tlbl%d"    x
       | Jnz x         -> Printf.sprintf "jnz\t\tlbl%d"   x
       | Jmp x         -> Printf.sprintf "jmp\t\tlbl%d"   x
@@ -99,7 +101,7 @@ let rec sint env prg sstack =
   | i :: prg' ->
       let env, code, sstack' = 
 	match i with
-		| PUSH n ->  
+	| PUSH n ->  
             let env', s = env#allocate sstack in
             env', [Mov (L n, s)], s :: sstack
         | LD x ->
@@ -107,10 +109,10 @@ let rec sint env prg sstack =
             let env'', s = env'#allocate sstack in
             env'', 
 			(match s with (* Нельзя командой mov писать из памяти в память, так что используем регистр edx*)
-			| S _ [Mov (M x, edx); Mov (edx, s)]
-			| _ [Mov (M x, s)]
+			| S _ -> [Mov (M x, edx); Mov (edx, s)]
+			| _ -> [Mov (M x, s)]
 			), s :: sstack
-		| ST x ->
+	| ST x ->
             let env' = env#local x in
             let s :: sstack' = sstack in
             env', 
@@ -121,7 +123,7 @@ let rec sint env prg sstack =
         | READ  ->
             env, [Call "lread"], [eax]
         | WRITE ->
-            env, [Push eax; Call "lwrite"; Pop edx], [] 
+            env, [Push ebx; Call "lwrite"; Pop edx], [] 
 			| LBL x -> env, [Lbl x], []
 		| JMP x -> env, [Jmp x], []
 
@@ -157,25 +159,25 @@ let rec sint env prg sstack =
 		  
                 ), sstack'
             | _        -> env,
-				(match i with 
-			| MUL 		  -> [Mul(x,edx)]
-			| ADD         -> [Add(x,edx)]
+			(match i with 
+			| MUL 	      -> [Mul(x,y)]
+			| ADD         -> [Add(x,y)]
 			| DIV         -> [Mov (y, eax); Cltd; Div x; Mov (eax, y)]
 			| REM         -> [Mov (y, eax); Cltd; Div x; Mov (edx, y)]
-			| SUB         -> [Sub(x,edx)]
-			| OR          -> [OrBin(x, y); Mov (L 0, y); Setne dl;]
+			| SUB         -> [Sub(x,y)]
+			| OR          -> [Mov (y, edx); OrBin(x, edx); Mov (L 0, edx); Setne dl;Mov (edx, y)]
             | AND         -> [Mov (y, edx); AndBin (y, edx);               
 								Mov (L 0, edx); Setne dl;                    
 								Mov (x, eax); AndBin (x, eax);               
 								Mov (L 0, eax); Setne al;                    
 								AndBin (eax, edx); Mov (L 0, edx); Setne dl; 
 								Mov (edx, y)] 
-            | EQUAL       -> [Mov (y, edx)];Cmp(x, edx); Mov (L 0, edx); Sete dl; [Mov (edx, y)]
-            | NOTEQUAL    -> [Mov (y, edx)];Cmp(x, edx); Mov (L 0, edx); Setne dl; [Mov (edx, y)]
-            | LESS        -> [Mov (y, edx)];Cmp(x, edx); Mov (L 0, edx); Setl dl; [Mov (edx, y)]
-            | MORE        -> [Mov (y, edx)];Cmp(x, edx); Mov (L 0, edx); Setg dl; [Mov (edx, y)]
-            | LESSEQUAL   -> [Mov (y, edx)];Cmp(x, edx); Mov (L 0, edx); Setle dl; [Mov (edx, y)]
-            | MOREEQUAL   -> [Mov (y, edx)];Cmp(x, edx); Mov (L 0, edx); Setge dl; [Mov (edx, y)]
+            | EQUAL       -> [Mov (y, edx);Cmp(x, edx); Mov (L 0, edx); Sete dl; Mov (edx, y)]
+            | NOTEQUAL    -> [Mov (y, edx);Cmp(x, edx); Mov (L 0, edx); Setne dl; Mov (edx, y)]
+            | LESS        -> [Mov (y, edx);Cmp(x, edx); Mov (L 0, edx); Setl dl; Mov (edx, y)]
+            | MORE        -> [Mov (y, edx);Cmp(x, edx); Mov (L 0, edx); Setg dl; Mov (edx, y)]
+            | LESSEQUAL   -> [Mov (y, edx);Cmp(x, edx); Mov (L 0, edx); Setle dl; Mov (edx, y)]
+            | MOREEQUAL   -> [Mov (y, edx);Cmp(x, edx); Mov (L 0, edx); Setge dl; Mov (edx, y)]
 		  
                 ), sstack'
             )
@@ -202,4 +204,11 @@ let compile p =
   out "\tpopl\t%ebp\n";
   out "\tret\n";
   Buffer.contents buf
+
+let build stmt name =
+  let outf = open_out (Printf.sprintf "%s.s" name) in
+  Printf.fprintf outf "%s" (compile stmt);
+  close_out outf;
+  let inc = try Sys.getenv "RC_RUNTIME" with _ -> "../runtime" in
+Sys.command (Printf.sprintf "gcc -m32 -o %s %s/runtime.o %s.s" name inc name)
     

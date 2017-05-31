@@ -1,15 +1,15 @@
-open GT
+open Ostap.Util
 
 (* AST for expressions *)
 module Expr =
   struct
 
-    @type t =
+    type t =
     | Var   	of string
     | Const 	of int
     | Add   	of t * t
     | Mul   	of t * t 
-	| Sub   	of t * t
+    | Sub   	of t * t
     | Div   	of t * t
     | Rem   	of t * t
     | Or    	of t * t
@@ -27,13 +27,13 @@ module Expr =
 module Stmt =
   struct
 
-    @type t =
+    type t =
     | Skip
     | Assign of string * Expr.t
     | Read   of string
     | Write  of Expr.t
-    | Seq    of t * t with show
-	| If     of Expr.t * t * t
+    | Seq    of t * t
+    | If     of Expr.t * t * t
     | While  of Expr.t * t
     | Until  of t * Expr.t
 

@@ -13,7 +13,7 @@ module Expr =
       | Const z           -> z
       | Add  (x, y)       -> eval' x + eval' y
       | Mul  (x, y)       -> eval' x * eval' y
-	  | Sub  (x, y)       -> eval' x - eval' y
+      | Sub  (x, y)       -> eval' x - eval' y
       | Div  (x, y)       -> eval' x / eval' y
       | Rem  (x, y)       -> eval' x mod eval' y
       | Or (x, y)         -> if ((eval' x) == 0) && ((eval' y) == 0) then 0 else 1
