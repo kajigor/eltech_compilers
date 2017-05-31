@@ -18,7 +18,7 @@ let parse filename =
 	 Matcher.Skip.nestedComment "(*" "*)"
        ] s
     end)
-    (ostap (!(Stmt.parse) -EOF))
+    (ostap (!(Stmt.sequence) -EOF))
 
 let main =
   try

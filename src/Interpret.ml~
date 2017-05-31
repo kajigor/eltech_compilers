@@ -66,7 +66,7 @@ module Stmt =
             if (Expr.eval expr st) != 0
                  then eval then_part conf
             else eval else_part conf
-      | While (expr, value) ->
+      | While (expr, value)
            let rec loop expr' value' ( (st', _, _) as conf') =
                if (Expr.eval expr' st') != 0
                   then loop expr' value' (eval value' conf')

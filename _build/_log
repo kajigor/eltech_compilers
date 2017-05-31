@@ -1,0 +1,14 @@
+### Starting build.
+# Target: src/rc.ml.depends, tags: { debug, extension:ml, file:src/rc.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+/usr/bin/ocamldep.opt -modules src/rc.ml > src/rc.ml.depends # cached
+# Target: src/Driver.ml.depends, tags: { debug, extension:ml, file:src/Driver.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+/usr/bin/ocamldep.opt -modules src/Driver.ml > src/Driver.ml.depends # cached
+# Target: src/Interpret.ml.depends, tags: { debug, extension:ml, file:src/Interpret.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+/usr/bin/ocamldep.opt -modules src/Interpret.ml > src/Interpret.ml.depends # cached
+# Target: src/Language.ml.depends, tags: { debug, extension:ml, file:src/Language.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+/usr/bin/ocamldep.opt -modules src/Language.ml > src/Language.ml.depends
++ /usr/bin/ocamldep.opt -modules src/Language.ml > src/Language.ml.depends
+File "src/Language.ml", line 46, characters 24-25:
+Error: Syntax error: type expected.
+Command exited with code 2.
+# Compilation unsuccessful.
