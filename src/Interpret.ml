@@ -9,10 +9,21 @@ module Expr =
     let rec eval expr st = 
       let eval' e = eval e st in
       match expr with
-      | Var   x     -> st x
-      | Const z     -> z
-      | Add  (x, y) -> eval' x + eval' y
-      | Mul  (x, y) -> eval' x * eval' y
+      | Var   x             -> st x
+      | Const z             -> z
+      | Binop ("+", x, y)   -> eval' x + eval' y
+      | Binop ("-", x, y)   -> eval' x - eval' y
+      | Binop ("*", x, y)   -> eval' x * eval' y
+      | Binop ("/", x, y)   -> eval' x / eval' y
+      | Binop ("%", x, y)   -> (eval' x) mod (eval' y)
+      | Binop ("<", x, y)   -> if (eval' x) < (eval' y) then 1 else 0
+      | Binop ("<=", x, y)  -> if (eval' x) <= (eval' y) then 1 else 0
+      | Binop (">", x, y)   -> if (eval' x) > (eval' y) then 1 else 0
+      | Binop (">=", x, y)  -> if (eval' x) >= (eval' y) then 1 else 0
+      | Binop ("==", x, y)  -> if (eval' x) == (eval' y) then 1 else 0
+      | Binop ("!=", x, y)  -> if (eval' x) <> (eval' y) then 1 else 0
+      | Binop ("&&", x, y)  -> if ((eval' x) <> 0) && ((eval' y) <> 0) then 1 else 0
+      | Binop ("!!", x, y)  -> if ((eval' x) <> 0) || ((eval' y) <> 0) then 1 else 0
 
   end
 
