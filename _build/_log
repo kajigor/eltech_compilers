@@ -1,0 +1,298 @@
+### Starting build.
+# Target: src/rc.ml.depends, tags: { debug, extension:ml, file:src/rc.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/rc.ml > src/rc.ml.depends
+# Target: src/Driver.ml.depends, tags: { debug, extension:ml, file:src/Driver.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/Driver.ml > src/Driver.ml.depends
+# Target: src/Interpret.ml.depends, tags: { debug, extension:ml, file:src/Interpret.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/Interpret.ml > src/Interpret.ml.depends
+# Target: src/Language.ml.depends, tags: { debug, extension:ml, file:src/Language.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/Language.ml > src/Language.ml.depends
+# Target: src/Language.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/Language.cmo, file:src/Language.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Language.cmo src/Language.ml
++ ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Language.cmo src/Language.ml
+File "src/Language.ml", line 59, characters 78-83:
+Warning 40: Const was selected from type Expr.t.
+It is not visible in the current scope, and will not 
+be selected if the type becomes unknown.
+# Target: src/StackMachine.ml.depends, tags: { debug, extension:ml, file:src/StackMachine.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/StackMachine.ml > src/StackMachine.ml.depends
+# Target: src/Interpret.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/Interpret.cmo, file:src/Interpret.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Interpret.cmo src/Interpret.ml
++ ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Interpret.cmo src/Interpret.ml
+File "src/Interpret.ml", line 11, characters 6-950:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+Binop ("", _, _)
+File "src/Interpret.ml", line 44, characters 12-23:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+# Target: src/X86.ml.depends, tags: { debug, extension:ml, file:src/X86.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/X86.ml > src/X86.ml.depends
+# Target: src/StackMachine.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/StackMachine.cmo, file:src/StackMachine.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/StackMachine.cmo src/StackMachine.ml
++ ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/StackMachine.cmo src/StackMachine.ml
+File "src/StackMachine.ml", line 50, characters 14-23:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 61, characters 29-40:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 63, characters 29-40:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 69, characters 30-41:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 71, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 73, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 75, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 77, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 79, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 81, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 83, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 85, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 87, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 89, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 91, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 93, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 95, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 99, characters 30-41:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 102, characters 30-41:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 131, characters 25-981:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+Binop ("", _, _)
+# Target: src/X86.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/X86.cmo, file:src/X86.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/X86.cmo src/X86.ml
++ ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/X86.cmo src/X86.ml
+File "src/X86.ml", line 9, characters 4-46:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[|  |]
+File "src/X86.ml", line 47, characters 4-1369:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+Mod (_, _)
+File "src/X86.ml", line 120, characters 16-28:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 129, characters 16-28:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 132, characters 16-28:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 137, characters 16-36:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 141, characters 12-922:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+(READ|WRITE|PUSH _|LD _|ST _|LBL _|JNZ _|JZ _|JMP _)
+File "src/X86.ml", line 161, characters 6-19:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+(_, _, _::_)
+# Target: src/Driver.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/Driver.cmo, file:src/Driver.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Driver.cmo src/Driver.ml
+# Target: src/rc.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/rc.cmo, file:src/rc.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/rc.cmo src/rc.ml
+# Target: src/rc.byte, tags: { byte, debug, dont_link_with, extension:byte, file:src/rc.byte, link, ocaml, package(re,ostap,GT), program, quiet, rectypes, traverse }
+ocamlfind ocamlc -linkpkg -g -package re,ostap,GT src/Language.cmo src/Interpret.cmo src/StackMachine.cmo src/X86.cmo src/Driver.cmo src/rc.cmo -o src/rc.byte
+# Target: src/Language.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/Language.cmx, file:src/Language.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Language.cmx src/Language.ml
++ ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Language.cmx src/Language.ml
+File "src/Language.ml", line 59, characters 78-83:
+Warning 40: Const was selected from type Expr.t.
+It is not visible in the current scope, and will not 
+be selected if the type becomes unknown.
+# Target: src/Interpret.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/Interpret.cmx, file:src/Interpret.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Interpret.cmx src/Interpret.ml
++ ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Interpret.cmx src/Interpret.ml
+File "src/Interpret.ml", line 11, characters 6-950:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+Binop ("", _, _)
+File "src/Interpret.ml", line 44, characters 12-23:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+# Target: src/StackMachine.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/StackMachine.cmx, file:src/StackMachine.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/StackMachine.cmx src/StackMachine.ml
++ ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/StackMachine.cmx src/StackMachine.ml
+File "src/StackMachine.ml", line 50, characters 14-23:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 61, characters 29-40:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 63, characters 29-40:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 69, characters 30-41:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 71, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 73, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 75, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 77, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 79, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 81, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 83, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 85, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 87, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 89, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 91, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 93, characters 27-43:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 95, characters 26-42:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 99, characters 30-41:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 102, characters 30-41:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/StackMachine.ml", line 131, characters 25-981:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+Binop ("", _, _)
+# Target: src/X86.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/X86.cmx, file:src/X86.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/X86.cmx src/X86.ml
++ ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/X86.cmx src/X86.ml
+File "src/X86.ml", line 9, characters 4-46:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[|  |]
+File "src/X86.ml", line 47, characters 4-1369:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+Mod (_, _)
+File "src/X86.ml", line 120, characters 16-28:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 129, characters 16-28:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 132, characters 16-28:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 137, characters 16-36:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/X86.ml", line 141, characters 12-922:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+(READ|WRITE|PUSH _|LD _|ST _|LBL _|JNZ _|JZ _|JMP _)
+File "src/X86.ml", line 161, characters 6-19:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+(_, _, _::_)
+# Target: src/Driver.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/Driver.cmx, file:src/Driver.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Driver.cmx src/Driver.ml
+# Target: src/rc.cmx, tags: { compile, debug, extension:cmx, extension:ml, file:src/rc.cmx, file:src/rc.ml, implem, native, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlopt -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/rc.cmx src/rc.ml
+# Target: src/rc.native, tags: { debug, dont_link_with, extension:native, file:src/rc.native, link, native, ocaml, package(re,ostap,GT), program, quiet, rectypes, traverse }
+ocamlfind ocamlopt -linkpkg -g -package re,ostap,GT src/Language.cmx src/Interpret.cmx src/StackMachine.cmx src/X86.cmx src/Driver.cmx src/rc.cmx -o src/rc.native
+# Compilation successful.
