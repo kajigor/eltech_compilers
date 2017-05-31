@@ -10,7 +10,17 @@ module Instr =
       | ST   of string
       | ADD  
       | MUL
-
+	  | SUB
+	  | DIV
+	  | MOD
+	  | AND
+	  | OR
+	  | EQUALS
+	  | NOT_EQUALS
+	  | GREATER
+	  | LESS
+	  | GREATER_EQUALS
+	  | LESS_EQUALS
   end
 
 module Program =
@@ -26,31 +36,50 @@ module Interpret =
     open Instr
     open Interpret.Stmt
 
+    	
+		
+
+
     let run prg input =
-      let rec run' prg ((stack, st, input, output) as conf) =
+      let rec run' ((prg,stack, st, input, output) as conf) =
 	match prg with
 	| []        -> conf
 	| i :: prg' ->
-            run' prg' (
+            run'(
             match i with
             | READ  -> let z :: input' = input in
-              (z :: stack, st, input', output)
-            | WRITE -> let z :: stack' = stack in
-              (stack', st, input, output @ [z])
-	    | PUSH n -> (n :: stack, st, input, output)
-            | LD   x -> (st x :: stack, st, input, output)
-	    | ST   x -> let z :: stack' = stack in
-              (stack', update st x z, input, output)
-	    | _ -> let y :: x :: stack' = stack in
-              ((match i with ADD -> (+) | _ -> ( * )) x y :: stack', 
+              (prg',z :: stack, st, input', output)
+            | WRITE -> let h :: stack' = stack in
+              (prg',stack', st, input, output @ [h])
+	    | PUSH n -> (prg',n :: stack, st, input, output)
+            | LD   x -> (prg',st x :: stack, st, input, output)
+	    | ST   x -> let h :: stack' = stack in
+              (prg',stack', update st x h, input, output)
+
+	    | _ -> let y :: x :: stack'' = stack in
+              (prg',(match i with 
+		 | ADD -> ( + )
+                 | MUL -> ( * )
+	             | SUB -> ( - )
+	             | DIV -> ( / )
+	             | MOD -> ( mod )
+	             | AND -> ( fun a b -> if (a == 1) && (b == 1)  then 1 	 else 0)
+	             | OR -> ( fun a b -> if (a == 0) && (b == 0)   then 0 else 1)
+	             | EQUALS -> ( fun a b -> if (a == b)  then 1  else 0)
+	             | NOT_EQUALS -> ( fun a b -> if (a == b)  then 0 else 1)
+	             | GREATER -> ( fun a b -> if (a > b)  then 1  else 0)
+	             | LESS -> ( fun a b -> if (a < b)    then 1 else 0)
+	             | GREATER_EQUALS -> ( fun a b -> if (a < b) then 0   else 1)
+	             | LESS_EQUALS -> ( fun a b -> if (a > b)  then 0  else 1)
+			  ) x y :: stack'', 
                st, 
                input, 
                output
               )
            )
       in
-      let (_, _, _, output) = 
-	run' prg ([], 
+      let (_,_, _, _, output) = 
+	run' (prg,[], 
 	          (fun _ -> failwith "undefined variable"),
 	          input,
 	          []
@@ -69,12 +98,24 @@ module Compile =
 
 	open Language.Expr
 
-	let rec compile = function 
+	let rec compile = 
+	let twoargs op (x,y) = (compile x) @ (compile y) @ [op] in
+	function 
 	| Var x      -> [LD   x]
 	| Const n    -> [PUSH n]
-	| Add (x, y) -> (compile x) @ (compile y) @ [ADD]
-	| Mul (x, y) -> (compile x) @ (compile y) @ [MUL]
-
+	| Add (x, y) -> twoargs ADD (x, y)
+	| Mul (x, y) -> twoargs MUL (x, y)
+	| Sub  (x, y) -> twoargs SUB (x, y)
+	| Div  (x, y) -> twoargs DIV (x, y)
+	| Mod  (x, y) -> twoargs MOD (x, y)
+	| And  (x, y) -> twoargs AND (x, y)
+	| Or   (x, y) -> twoargs OR (x, y)
+    | Equals (x, y) -> twoargs EQUALS (x, y)
+	| NotEquals (x, y) -> twoargs NOT_EQUALS (x, y)
+    | Greater  (x, y) -> twoargs GREATER (x, y)
+    | Less  (x, y) -> twoargs LESS (x, y)
+    | GreaterEquals  (x, y) -> twoargs GREATER_EQUALS (x, y)
+    | LessEquals  (x, y) -> twoargs LESS_EQUALS (x, y)
       end
 
     module Stmt =
