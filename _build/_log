@@ -1,0 +1,33 @@
+### Starting build.
+# Target: src/rc.ml.depends, tags: { debug, extension:ml, file:src/rc.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/rc.ml > src/rc.ml.depends # cached
+# Target: src/Driver.ml.depends, tags: { debug, extension:ml, file:src/Driver.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/Driver.ml > src/Driver.ml.depends
+# Target: src/Interpret.ml.depends, tags: { debug, extension:ml, file:src/Interpret.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/Interpret.ml > src/Interpret.ml.depends
+# Target: src/Language.ml.depends, tags: { debug, extension:ml, file:src/Language.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/Language.ml > src/Language.ml.depends
+# Target: src/Language.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/Language.cmo, file:src/Language.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Language.cmo src/Language.ml
+# Target: src/StackMachine.ml.depends, tags: { debug, extension:ml, file:src/StackMachine.ml, ocaml, ocamldep, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamldep -syntax camlp5o -package ostap.syntax -modules src/StackMachine.ml > src/StackMachine.ml.depends
+# Target: src/Interpret.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:src/Interpret.cmo, file:src/Interpret.ml, implem, ocaml, package(ostap.syntax), quiet, rectypes, syntax(camlp5o), traverse }
+ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Interpret.cmo src/Interpret.ml
++ ocamlfind ocamlc -c -g -g -rectypes -syntax camlp5o -package ostap.syntax -I src -o src/Interpret.cmo src/Interpret.ml
+File "src/Interpret.ml", line 11, characters 6-950:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+Binop ("", _, _)
+File "src/Interpret.ml", line 45, characters 12-23:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+[]
+File "src/Interpret.ml", line 41, characters 6-636:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+Repeat (_, _)
+File "src/Interpret.ml", line 69, characters 0-1067:
+Error: Multiple definition of the module name Expr.
+       Names must be unique in a given structure or signature.
+Command exited with code 2.
+# Compilation unsuccessful.
