@@ -187,11 +187,32 @@ module Compile =
               )
               fs
     end
+
+    let printer = function
+    | READ      -> Printf.printf "READ; "
+    | WRITE     -> Printf.printf "WRITE; "
+    | PUSH  i   -> Printf.printf "PUSH %d; " i
+    | LD    s   -> Printf.printf "LD %s; " s
+    | ST    s   -> Printf.printf "ST %s; " s
+    | BINOP s   -> Printf.printf "BINOP %s; " s
+    | LBL   s   -> Printf.printf "LBL %s; " s
+    | JNZ   s   -> Printf.printf "JNZ %s; " s
+    | JZ    s   -> Printf.printf "JZ %s; " s
+    | JMP   s   -> Printf.printf "JMP %s; " s
+    | CALL (s, l) -> Printf.printf "CALL %s; " s
+    | DROP      -> Printf.printf "DROP; "
+    | BEGIN (s, l1, l2) -> Printf.printf "BEGIN %s; " s
+    | END       -> Printf.printf "END; "
+    | RET       -> Printf.printf "RET; "
+    | _ -> Printf.printf "INSTR(?); "
+
+
   module Program =
   struct
 	let compile (fs, s) =
     let env = new senv fs in
     let code = (LBL "main_") :: Stmt.compile env s @ END :: env#funs in
+    (*List.map printer code;*)
     code
     end
   end

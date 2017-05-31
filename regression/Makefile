@@ -1,4 +1,4 @@
-TESTS=test001 test002 test003 test004 test005 test006 test007 test008 test012 test013 #exprs
+TESTS=test011 test001 test002 test003 test004 test005 test006 test007 test008 test012 test013 #exprs
 TESTS+=test009 test010 test014 test015 test016 test017 test018 #if and while
 TESTS+=test011 test024 test025  #functions
 
@@ -10,7 +10,7 @@ TESTS+=test011 test024 test025  #functions
 check: $(TESTS) 
 
 $(TESTS): %: %.expr
-	../rc.native     $< && cat $@.input | ./$@ > $@.log && diff $@.log orig/$@.log
+#	../rc.native     $< && cat $@.input | ./$@ > $@.log && diff $@.log orig/$@.log
 	cat $@.input | ../rc.native -i $< > $@.log && diff $@.log orig/$@.log
 	cat $@.input | ../rc.native -s $< > $@.log && diff $@.log orig/$@.log
 
