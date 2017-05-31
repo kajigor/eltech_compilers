@@ -3,3 +3,12 @@
 /Driver.cmo
 /Expr.cmi
 /Expr.cmo
+_build
+rc.byte
+rc.native
+*.o
+*.swp
+*.s
+generated?????
+*.log
+test???
