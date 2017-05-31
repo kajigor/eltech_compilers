@@ -10,12 +10,31 @@ let [|eax; ebx; ecx; esi; edi; edx; esp; ebp|] = Array.mapi (fun i _ -> R i) reg
 
 type instr =
 | Add  of opnd * opnd
+| Sub  of opnd * opnd
 | Mul  of opnd * opnd
+| Div  of opnd * opnd (* Signed divide EDX:EAX by DWORD byte (EAX=Quo, EDX=Rem)*)
+| Mod  of opnd * opnd
+| Cmp  of opnd * opnd
+| Setl
+| Setle
+| Setg
+| Setge
+| Sete
+| Setne
+| Xor of opnd * opnd
+| And of opnd * opnd
+| Or of opnd * opnd
+| Movzbl (* expands a single byte to 32 bits with 24 leading zeros, and copies it into a double-word destination *)
+| Cdq    (* copies the sign (bit 31) of the value in the EAX register into every bit position in the EDX register *)
 | Mov  of opnd * opnd
 | Push of opnd
 | Pop  of opnd
 | Call of string
 | Ret
+| Lbl of string
+| Jnz of string
+| Jz of string
+| Jmp of string
 
 let to_string buf code =      
   let instr =
@@ -26,13 +45,37 @@ let to_string buf code =
       | M s -> s  
     in
     function
-      | Add (x, y) -> Printf.sprintf "addl\t%s,%s"  (opnd x) (opnd y)
-      | Mul (x, y) -> Printf.sprintf "imull\t%s,%s" (opnd x) (opnd y)
-      | Mov (x, y) -> Printf.sprintf "movl\t%s,%s"  (opnd x) (opnd y)
-      | Push x     -> Printf.sprintf "pushl\t%s"    (opnd x)
-      | Pop  x     -> Printf.sprintf "popl\t%s"     (opnd x)
-      | Call x     -> Printf.sprintf "call\t%s"      x
-      | Ret        -> "ret" 
+      | Add (x, y) -> Printf.sprintf "addl\t%s,\t%s"  (opnd x) (opnd y)
+      | Sub (x, y) -> Printf.sprintf "subl\t%s,\t%s"  (opnd x) (opnd y)
+      | Mul (x, y) -> Printf.sprintf "imull\t%s,\t%s" (opnd x) (opnd y)
+      | Div (x, y) -> Printf.sprintf "idivl\t%s"      (opnd x)
+
+      | Cmp (x, y) -> Printf.sprintf "cmp\t%s,\t%s"   (opnd x) (opnd y)
+      | Setl       -> "setl\t%al"
+      | Setle      -> "setle\t%al"
+      | Setg       -> "setg\t%al"
+      | Setge      -> "setge\t%al"
+      | Sete       -> "sete\t%al"
+      | Setne      -> "setne\t%al"
+
+      | Xor (x, y) -> Printf.sprintf "xorl\t%s,\t%s"  (opnd x) (opnd y)
+      | And (x, y) -> Printf.sprintf "andl\t%s,\t%s"  (opnd x) (opnd y)
+      | Or  (x, y) -> Printf.sprintf "orl\t%s,\t%s"   (opnd x) (opnd y)
+
+      | Movzbl     -> "movzbl\t%al,\t%edx"
+      | Cdq        -> "cdq"
+
+      | Mov (x, y) -> Printf.sprintf "movl\t%s,\t%s"  (opnd x) (opnd y)
+      | Push x     -> Printf.sprintf "pushl\t%s"      (opnd x)
+      | Pop  x     -> Printf.sprintf "popl\t%s"       (opnd x)
+      | Call x     -> Printf.sprintf "call\t%s"       x
+
+      | Lbl l      -> Printf.sprintf "%s:"            l
+      | Jnz l      -> Printf.sprintf "jnz\t%s"        l
+      | Jz  l      -> Printf.sprintf "jz\t%s"         l
+      | Jmp l      -> Printf.sprintf "jmp\t%s"        l
+
+      | Ret        -> "ret"
   in
   let out s = 
     Buffer.add_string buf "\t"; 
@@ -49,7 +92,7 @@ class env =
     val depth  = 0
 	
     method allocate = function
-      | []                          -> this, R 0
+      | []                          -> this, R 1
       | R i :: _ when i < nregs - 1 -> this, R (i+1)
       | S i :: _                    -> {< depth = max depth (i+1) >}, S (i+1)
       | _                           -> {< depth = max depth 1 >}, S 1 
@@ -63,37 +106,56 @@ let rec sint env prg sstack =
   match prg with
   | []        -> env, [], []
   | i :: prg' ->
-      let env, code, sstack' = 
-	match i with
-	| PUSH n ->  
+    let env, code, sstack' = 
+      match i with
+        | PUSH n ->  
             let env', s = env#allocate sstack in
             env', [Mov (L n, s)], s :: sstack
         | LD x ->
             let env'     = env#local x in
             let env'', s = env'#allocate sstack in
-            env'', [Mov (M x, s)], s :: sstack
-	| ST x ->
+            env'', [Mov (M x, edx); Mov (edx, s)], s :: sstack
+        | ST x ->
             let env' = env#local x in
             let s :: sstack' = sstack in
-            env', [Mov (s, M x)], sstack' 
+            env', [Mov (s, edx); Mov (edx, M x)], sstack'
         | READ  ->
             env, [Call "lread"], [eax]
         | WRITE ->
-            env, [Push eax; Call "lwrite"; Pop edx], [] 
+            env, [Push (R 1); Call "lwrite"; Pop (R 1)], []
+        | LBL l  ->
+            env, [Lbl l], sstack
+        | JNZ l  ->
+            let s :: sstack' = sstack in
+            env, [Cmp (L 0, s); Jnz l], sstack'
+        | JZ  l  ->
+            let s :: sstack' = sstack in
+            env, [Cmp (L 0, s); Jz l], sstack'
+        | JMP l  ->
+            env, [Jmp l], sstack
         | _ ->
             let x::(y::_ as sstack') = sstack in
             (fun op ->
-              match x, y with
-              | S _, S _ -> env, [Mov (y, edx); op x edx; Mov (edx, y)], sstack'
-              | _        -> env, [op x y], sstack'   
+              env, [Mov (y, edx)] @ op x edx @ [ Mov (edx, y)], sstack'
             )
-              (match i with 
-	      | MUL -> fun x y -> Mul (x, y)
-	      | ADD -> fun x y -> Add (x, y)
-              )
-      in
-      let env, code', sstack'' = sint env prg' sstack' in
-      env, code @ code', sstack''
+            (match i with
+            | ADD -> fun x y -> [Add (x, y)]
+            | MUL -> fun x y -> [Mul (x, y)]
+            | SUB -> fun x y -> [Sub (x, y)]
+            | DIV -> fun x y -> [Mov (y, eax); Cdq; Div (x, y); Mov (eax, edx)]
+            | MOD -> fun x y -> [Mov (y, eax); Cdq; Div (x, y);]
+            | LT  -> fun x y -> [Cmp (x, y); Setl; Movzbl]
+            | LE  -> fun x y -> [Cmp (x, y); Setle; Movzbl]
+            | GT  -> fun x y -> [Cmp (x, y); Setg; Movzbl]
+            | GE  -> fun x y -> [Cmp (x, y); Setge; Movzbl]
+            | EQ  -> fun x y -> [Cmp (x, y); Sete; Movzbl]
+            | NEQ -> fun x y -> [Cmp (x, y); Setne; Movzbl]
+            | AND -> fun x y -> [Xor (eax, eax); Cmp (y, eax); Setne; Mov (x, edx); Mul (eax, edx); Xor(eax, eax); Cmp(edx, eax); Setne; Mov (eax, y)]
+            | OR  -> fun x y -> [Xor (eax, eax); Or (x, y); Cmp (y, eax); Setne; Mov (eax, y)]
+            )
+    in
+    let env, code', sstack'' = sint env prg' sstack' in
+    env, code @ code', sstack''  
 	
 let compile p = 
   let env, code, [] = sint (new env) (Compile.Program.compile p) [] in
