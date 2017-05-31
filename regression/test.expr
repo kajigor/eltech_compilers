@@ -1,0 +1,13 @@
+fun f(n) 
+begin
+  write(n);
+  return 0
+end
+
+n:=10;
+while n >= 1 do
+      b := f(n);
+      n := n - 1
+od
+
+
