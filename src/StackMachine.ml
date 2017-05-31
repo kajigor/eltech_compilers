@@ -44,7 +44,7 @@ module Interpret =
 
 
     let run prg input =
-      (*let prg_origin = prg in*)
+    
       let goto lbl =
         let rec findl prg lbl =
           let i :: prg' = prg in

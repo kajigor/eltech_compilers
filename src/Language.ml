@@ -40,30 +40,32 @@ module Stmt =
     | Seq    of t * t
     | If     of Expr.t * t * t
     | While  of Expr.t * t
-    | Repeat of t * Expr.t
 
     let expr = Expr.parse
 
     ostap (
-      simp: x:IDENT ":=" e:expr  {Assign (x, e)}
-      | %"read"  "(" x:IDENT ")" {Read x}
-      | %"write" "(" e:expr  ")" {Write e}
-      | %"skip"                  {Skip}
+      statement:
+        x:IDENT ":=" e:expr           {Assign (x, e)}
+        | %"read" "(" x:IDENT ")"     {Read x}
+        | %"write" "(" e:expr ")"     {Write e}
+        | %"skip"                     {Skip}
+        | %"if" exp:expr %"then" seq1:sequence seq2:elsePart?
+          %"fi"   {If(exp, seq1, match seq2 with None -> Skip | Some seq2 -> seq2)}
+        | %"while" exp:expr
+          "do" seq:sequence %"od"      {While(exp, seq)}
+        | %"for" s1:sequence "," e:expr "," s2:sequence
+          %"do" s:sequence %"od"       {Seq(s1, While (e, Seq (s, s2)))}
+        | %"repeat" seq:sequence 
+          "until" exp:expr             {Seq(seq, While(Expr.Binop("==", exp, (Const 0)), seq))};
 
-      | %"if" e:!(Expr.parse) 
-        %"then" s:!(parse)
-        %"fi"                    {If (e, s, Skip)}
+      elsePart: 
+        %"else" sequence
+        | %"elif" exp:expr %"then" seq1:sequence seq2:elsePart?
+          {If(exp,seq1, match seq2 with None -> Skip | Some seq2 -> seq2)};
 
-      | %"if" e:!(Expr.parse) 
-        %"then" s1:!(parse)
-        %"else" s2:!(parse)
-        %"fi"                    {If (e, s1, s2)}
-
-      | %"while" e:!(Expr.parse) 
-        %"do" s:!(parse)
-        %"od"                    {While (e, s)};
-      
-      parse: s:simp ";" d:parse {Seq (s,d)} | simp 
+      sequence:
+        s:statement ";" d:sequence    {Seq (s,d)}
+        | statement
     )
 
   end
@@ -73,7 +75,7 @@ module Program =
 
     type t = Stmt.t
 
-    let parse = Stmt.parse
+    let parse = Stmt.sequence
 
   end
 
