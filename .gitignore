@@ -3,3 +3,7 @@
 /Driver.cmo
 /Expr.cmi
 /Expr.cmo
+_build
+_tags
+rc.byte
+rc.native
